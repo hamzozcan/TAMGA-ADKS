@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=TAMGA-ADKS v2
+Comment=Acil Durum Kimlik Tanıma Sistemi
+Exec=python3 /home/elliot/Masaüstü/TAMGA-ADKS/tamga_launcher.py --simulate
+Icon=/home/elliot/Masaüstü/TAMGA-ADKS/tamga_logo_new.jpg
+Terminal=false
+Type=Application
+Categories=Utility;
+X-GNOME-Autostart-enabled=false
+StartupNotify=true

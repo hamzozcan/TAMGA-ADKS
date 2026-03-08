@@ -1,0 +1,43 @@
+# TAMGA-ADKS v2.0 — Backend Gereksinimleri
+# Kurulum: pip install -r requirements_v2.txt
+
+# ── Web Framework (Zorunlu) ──────────────────────
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+websockets==12.0
+pydantic==2.7.1
+
+# ── HTTP İstekleri (Zorunlu) ────────────────────
+requests==2.32.3
+
+# ── Harita Üretimi (Opsiyonel) ──────────────────
+folium==0.15.0
+qrcode==7.4.2
+
+# ── Masaüstü Pencere (Opsiyonel) ────────────────
+# Tarayıcı yerine native pencere için:
+pywebview==5.0.5
+
+# ── Raspberry Pi / Donanım (Sadece RPi'de) ──────
+# Bu paketler normal PC'de kurulmaz:
+# RPi.GPIO==0.7.1
+# mfrc522==0.0.7
+# pyserial==3.5
+# bluetooth==0.23
+
+# ── Ses / Medya (Opsiyonel) ─────────────────────
+# pygame==2.5.2
+# pydub==0.25.1
+# sounddevice==0.4.6
+# scipy==1.13.0
+# numpy==1.26.4
+# noisereduce==3.0.2
+
+# ── Görüntü İşleme (Opsiyonel) ──────────────────
+# opencv-python==4.10.0.82
+# Pillow==10.3.0
+
+# ── Ses Tanıma (Opsiyonel) ──────────────────────
+# SpeechRecognition==3.10.4
+# pyttsx3==2.90
+# gTTS==2.5.1

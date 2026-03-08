@@ -1,0 +1,14 @@
+[Unit]
+Description=TAMGA-ADKS Search Server
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/adks/TAMGA-ADKS/orange_pi_search_server.py
+WorkingDirectory=/home/adks/TAMGA-ADKS
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=adks
+
+[Install]
+WantedBy=multi-user.target

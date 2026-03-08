@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+venv/
+*.log
+server.log
+logs/
+map_cache/
+tts_cache/
+recordings/
+records.json
+tamga.key
+_arsiv/
+*.wav

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAMGA-ADKS | Arama Sistemi</title>
+    <style>
+        :root {
+            --primary: #0084ff;
+            --primary-glow: rgba(0, 132, 255, 0.5);
+            --bg-dark: #05070a;
+            --card-bg: rgba(13, 17, 23, 0.8);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-main: #e6edf3;
+            --text-dim: #8b949e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(circle at 50% 0%, rgba(0, 132, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(0, 132, 255, 0.05) 0%, transparent 40%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Hero Section / Captive Portal Header */
+        .hero {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeIn 1s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-container {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--primary) 0%, #0056b3 100%);
+            border-radius: 24px;
+            margin: 0 auto 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px var(--primary-glow);
+            font-size: 50px;
+            color: white;
+            position: relative;
+        }
+
+        .logo-container::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            border: 2px solid var(--primary);
+            border-radius: 28px;
+            opacity: 0.3;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 0.1;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            letter-spacing: -2px;
+            margin-bottom: 12px;
+            background: linear-gradient(to bottom, #fff 0%, #aaa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Glassmorphism Search Card */
+        .search-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            margin-bottom: 40px;
+        }
+
+        .search-form {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 16px;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 20px;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0 20px;
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .search-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 16px 32px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px var(--primary-glow);
+            filter: brightness(1.1);
+        }
+
+        /* Stats Section */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .stat-item:hover {
+            transform: scale(1.02);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+        }
+
+        /* Results table */
+        .results-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background: rgba(0, 132, 255, 0.1);
+            color: var(--primary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 16px 24px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        td {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.95rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .triage-badge {
+            padding: 6px 12px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-kırmızı {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .badge-sarı {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-yeşil {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-siyah {
+            background: rgba(55, 65, 81, 0.2);
+            color: #9ca3af;
+            border: 1px solid rgba(55, 65, 81, 0.3);
+        }
+
+        /* Loading */
+        .loader-container {
+            padding: 80px;
+            text-align: center;
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 5px solid rgba(0, 132, 255, 0.1);
+            border-bottom-color: var(--primary);
+            border-radius: 50%;
+            display: inline-block;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 80px;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            padding-bottom: 40px;
+        }
+
+        .credit {
+            margin-top: 10px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+
+            .search-form {
+                grid-template-columns: 1fr;
+            }
+
+            .search-btn {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <header class="hero">
+            <div class="logo-container" style="background: transparent; box-shadow: none;">
+                <img src="/logo.jpg" alt="TAMGA-ADKS"
+                    style="width: 100%; height: 100%; object-fit: contain; border-radius: 20px; box-shadow: 0 0 30px var(--primary-glow);">
+            </div>
+            <h1>TAMGA-ADKS</h1>
+            <p class="subtitle">Acil Durum Kimliklendirme Sistemi - Gelişmiş Arama ve Takip Paneli</p>
+        </header>
+
+        <div class="search-card">
+            <form class="search-form" id="searchForm">
+                <div class="input-group">
+                    <input type="text" id="searchQuery" placeholder="İsim, Kimlik No veya ID ile arayın..."
+                        autocomplete="off">
+                </div>
+                <select id="searchField">
+                    <option value="all">Tüm Alanlar</option>
+                    <option value="id">Kimlik No</option>
+                    <option value="name">Ad Soyad</option>
+                </select>
+                <button type="submit" class="search-btn">
+                    <span>🔍</span> Arama Yap
+                </button>
+            </form>
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-item">
+                <span class="stat-value" id="totalRecords">0</span>
+                <span class="stat-label">Toplam Kayıt</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" style="color: #ef4444" id="triageRed">0</span>
+                <span class="stat-label">Kırmızı (Acil)</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" style="color: #f59e0b" id="triageYellow">0</span>
+                <span class="stat-label">Sarı (Gecikmeli)</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" style="color: #10b981" id="triageGreen">0</span>
+                <span class="stat-label">Yeşil (Stabil)</span>
+            </div>
+        </div>
+
+        <div class="results-section">
+            <div class="table-responsive">
+                <table id="recordsTable">
+                    <thead>
+                        <tr>
+                            <th>Kimlik/ID</th>
+                            <th>Ad Soyad</th>
+                            <th>Triyaj</th>
+                            <th>Bilinç</th>
+                            <th>Cinsiyet</th>
+                            <th>GPS Konumu</th>
+                            <th>Zaman Damgası</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                        <!-- Dynamic Content -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="noResults" style="display: none;" class="loader-container">
+                <p style="color: var(--text-dim)">Sonuç bulunamadı.</p>
+            </div>
+            <div id="loadingIndicator" class="loader-container" style="display: none;">
+                <div class="loader"></div>
+                <p style="margin-top: 12px; color: var(--primary)">Sistem aranıyor...</p>
+            </div>
+        </div>
+
+        <footer>
+            <p>TAMGA-ADKS Sunucu Yazılımı v2.0</p>
+            <p class="credit">Geliştiren: HAMZA ÖZCAN</p>
+        </footer>
+    </div>
+
+    <script>
+        const searchForm = document.getElementById('searchForm');
+        const resultsBody = document.getElementById('resultsBody');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const noResults = document.getElementById('noResults');
+
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                document.getElementById('totalRecords').innerText = data.total_records || 0;
+                const t = data.triage_distribution || {};
+                document.getElementById('triageRed').innerText = t['KIRMIZI (Acil)'] || t['RED (Immediate)'] || 0;
+                document.getElementById('triageYellow').innerText = t['SARI (Gecikmeli)'] || t['YELLOW (Delayed)'] || 0;
+                document.getElementById('triageGreen').innerText = t['YEŞİL (Hafif)'] || t['GREEN (Minor)'] || 0;
+            } catch (e) { console.error(e); }
+        }
+
+        async function search(query = '', field = 'all') {
+            loadingIndicator.style.display = 'block';
+            resultsBody.innerHTML = '';
+            noResults.style.display = 'none';
+
+            try {
+                const url = query ? `/api/search?q=${encodeURIComponent(query)}&field=${field}` : '/api/records?limit=50';
+                const res = await fetch(url);
+                const data = await res.json();
+                const records = query ? data.results : data.records;
+
+                loadingIndicator.style.display = 'none';
+
+                if (!records || records.length === 0) {
+                    noResults.style.display = 'block';
+                    return;
+                }
+
+                records.forEach(r => {
+                    const tr = document.createElement('tr');
+                    const triage = (r['TRİYAJ'] || 'Bilinmiyor').split(' ')[0].toLowerCase();
+
+                    tr.innerHTML = `
+                    <td style="font-weight: 700;">${r['KİMLİK NO'] || r['PARMAK İZİ ID'] || 'N/A'}</td>
+                    <td style="font-weight: 500;">${r['AD SOYAD'] || 'İsimsiz'}</td>
+                    <td><span class="triage-badge badge-${triage}">${r['TRİYAJ'] || 'N/A'}</span></td>
+                    <td>${r['BİLİNÇ'] || 'N/A'}</td>
+                    <td>${r['CİNSİYET'] || 'N/A'}</td>
+                    <td style="font-family: monospace; font-size: 0.8rem; color: var(--primary)">${r['GPS'] || 'N/A'}</td>
+                    <td style="color: var(--text-dim); font-size: 0.85rem;">${r['TARİH/SAAT'] || 'N/A'}</td>
+                `;
+                    resultsBody.appendChild(tr);
+                });
+            } catch (e) {
+                console.error(e);
+                loadingIndicator.style.display = 'none';
+                noResults.style.display = 'block';
+            }
+        }
+
+        searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            search(document.getElementById('searchQuery').value, document.getElementById('searchField').value);
+        });
+
+        // Initial load
+        loadStats();
+        search();
+        setInterval(loadStats, 10000);
+    </script>
+
+</body>
+
+</html>

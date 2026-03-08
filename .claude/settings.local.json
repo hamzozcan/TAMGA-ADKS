@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import anthropic, google.generativeai, requests; print\\(''OK''\\)\")",
+      "Bash(python3 -c \"import google.genai; print\\(''google.genai OK''\\)\")",
+      "Bash(python3 -c \"import google.generativeai as g; print\\(dir\\(g\\)\\)\")",
+      "Bash(python3 -c \"import google.generativeai as genai; print\\(genai.__version__\\)\")",
+      "Bash(python3 -c \"import anthropic; print\\(anthropic.__version__\\)\")",
+      "Bash(python3 -c \":*)",
+      "Bash(DISPLAY=:0 python3 /home/elliot/Masaüstü/TAMGA-ADKS/atlas_asistan.py)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(echo $DISPLAY)",
+      "Bash(xdpyinfo)",
+      "Read(//tmp/.X11-unix/**)",
+      "Bash(/usr/bin/python3 -c \"import anthropic, google.generativeai, requests; print\\(''OK''\\)\")",
+      "Bash(/home/elliot/Masaüstü/TAMGA-ADKS/venv/bin/python3 -W ignore -c \":*)",
+      "Bash(chmod +x /home/elliot/Masaüstü/atlas_asistan_baslat.sh)",
+      "Bash(chmod +x /home/elliot/Masaüstü/AtlasAsistan.desktop)",
+      "Bash(gio set /home/elliot/Masaüstü/AtlasAsistan.desktop metadata::trusted true)",
+      "Bash(__NEW_LINE_c638b34d0b34483a__ desktop-file-validate /home/elliot/Masaüstü/AtlasAsistan.desktop)",
+      "Bash(__NEW_LINE_c638b34d0b34483a__ ls -lh /home/elliot/Masaüstü/atlas_asistan*.* /home/elliot/Masaüstü/AtlasAsistan.desktop)"
+    ]
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "version": "1.0",
+  "description": "TAMGA-ADKS Sesli Kontrol Komut Listesi / Voice Command Training List",
+  "tr": [
+    {
+      "id": "cmd_new",
+      "phrase": "yeni kayıt",
+      "alt": ["yeni kayit al", "yeni kayıt başlat"],
+      "desc": "Yeni kayıt başlatır – formu temizler",
+      "example": "yeni kayıt"
+    },
+    {
+      "id": "cmd_end",
+      "phrase": "kaydı bitir",
+      "alt": ["kayıt tamamla", "kaydet", "kaydi bitir"],
+      "desc": "Kaydı tamamlar ve sisteme kaydeder",
+      "example": "kaydı bitir"
+    },
+    {
+      "id": "cmd_exit",
+      "phrase": "otopilottan çık",
+      "alt": ["otopilot kapat", "çık", "kapat"],
+      "desc": "Otopilot modundan çıkar",
+      "example": "otopilottan çık"
+    },
+    {
+      "id": "cmd_photo",
+      "phrase": "fotoğraf çek",
+      "alt": ["foto çek", "resim çek", "fotograf cek"],
+      "desc": "Kamera ile fotoğraf çeker",
+      "example": "fotoğraf çek"
+    },
+    {
+      "id": "cmd_cam",
+      "phrase": "kamerayı aç",
+      "alt": ["kamera aç", "kamerayı başlat"],
+      "desc": "Kamerayı açar",
+      "example": "kamerayı aç"
+    },
+    {
+      "id": "cmd_team",
+      "phrase": "ekip kodu",
+      "alt": ["ekip"],
+      "desc": "Ekip kodunu girer. Ardından kodu söyleyin.",
+      "example": "ekip kodu ALFA ÜÇ"
+    },
+    {
+      "id": "cmd_incident",
+      "phrase": "olay kodu",
+      "alt": ["olay"],
+      "desc": "Olay kodunu girer. Ardından kodu söyleyin.",
+      "example": "olay kodu İKİBİNYİRMİDÖRT EYLÜL"
+    },
+    {
+      "id": "cmd_name",
+      "phrase": "ad soyad",
+      "alt": ["isim", "kimlik"],
+      "desc": "Kişinin adını soyadını girer",
+      "example": "ad soyad Ahmet Yılmaz"
+    },
+    {
+      "id": "cmd_train",
+      "phrase": "eğitim modu",
+      "alt": ["eğitimi aç", "ses eğitimi"],
+      "desc": "Ses eğitim modunu açar",
+      "example": "eğitim modu"
+    }
+  ],
+  "en": [
+    {
+      "id": "cmd_new",
+      "phrase": "new record",
+      "alt": ["start record", "new entry", "begin record"],
+      "desc": "Start a new record – clears the form",
+      "example": "new record"
+    },
+    {
+      "id": "cmd_end",
+      "phrase": "end record",
+      "alt": ["save record", "complete", "finish record"],
+      "desc": "Complete and save the current record",
+      "example": "end record"
+    },
+    {
+      "id": "cmd_exit",
+      "phrase": "exit autopilot",
+      "alt": ["exit", "close autopilot", "quit"],
+      "desc": "Exit autopilot mode",
+      "example": "exit autopilot"
+    },
+    {
+      "id": "cmd_photo",
+      "phrase": "take photo",
+      "alt": ["capture", "take picture", "snap photo"],
+      "desc": "Take a photo with the camera",
+      "example": "take photo"
+    },
+    {
+      "id": "cmd_cam",
+      "phrase": "open camera",
+      "alt": ["start camera", "activate camera"],
+      "desc": "Open the camera",
+      "example": "open camera"
+    },
+    {
+      "id": "cmd_team",
+      "phrase": "team code",
+      "alt": ["team"],
+      "desc": "Set team code. Say the code after the command.",
+      "example": "team code ALPHA THREE"
+    },
+    {
+      "id": "cmd_incident",
+      "phrase": "incident code",
+      "alt": ["incident", "event code"],
+      "desc": "Set incident code. Say the code after the command.",
+      "example": "incident code TWENTY TWENTY FOUR SEPTEMBER"
+    },
+    {
+      "id": "cmd_name",
+      "phrase": "full name",
+      "alt": ["name", "identity"],
+      "desc": "Enter the person's full name",
+      "example": "full name John Doe"
+    },
+    {
+      "id": "cmd_train",
+      "phrase": "training mode",
+      "alt": ["open training", "voice training"],
+      "desc": "Open voice training mode",
+      "example": "training mode"
+    }
+  ]
+}

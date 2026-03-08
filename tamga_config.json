@@ -1,0 +1,30 @@
+{
+  "users": [
+    {
+      "username": "goruntule",
+      "password": "1234",
+      "role": "viewer"
+    },
+    {
+      "username": "admin",
+      "password": "1001",
+      "role": "admin"
+    },
+    {
+      "username": "doktor",
+      "password": "2222",
+      "role": "doctor"
+    },
+    {
+      "username": "saha",
+      "password": "3333",
+      "role": "saha"
+    },
+    {
+      "username": "izleme",
+      "password": "4444",
+      "role": "izleme"
+    }
+  ],
+  "login_count": 0
+}
