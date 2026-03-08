@@ -1,77 +1,79 @@
 # TAMGA-ADKS
 
-**Akıllı Devamsızlık Kontrol Sistemi** — RFID tabanlı, FastAPI backend'li, web arayüzlü personel/öğrenci takip sistemi.
-Raspberry Pi üzerinde gerçek donanımla çalışır; normal bilgisayarda simülasyon moduyla test edilebilir.
+> 🥇 **TÜBİTAK 2204-A High School Research Projects Competition — Regional 1st Place · Turkey Finalist**
+
+**Smart Attendance Control System** — RFID-based, FastAPI backend, web interface for personnel/student tracking.
+Runs with real hardware on Raspberry Pi; testable on any PC with simulation mode.
 
 ---
 
-## Özellikler
+## Features
 
-- **RFID kart okuma** — RC522 modülü (Raspberry Pi)
-- **Parmak izi** — Deneyap DY50 sensörü (opsiyonel)
-- **GPS takibi** — SIM808 modülü ile konum kaydı (opsiyonel)
-- **Web arayüzü** — Canlı devamsızlık takibi, harita görünümü, QR kod
-- **Simülasyon modu** — RPi olmadan PC'de test
-- **Ses geri bildirimi** — başarı/hata sesleri, TTS (isteğe bağlı)
-- **Çevrimdışı çalışma** — internet gerekmez, yerel SQLite/JSON
-- **WebSocket** — gerçek zamanlı kart okuma olayları
-- **Barkod/QR** — JsBarcode entegrasyonu
+- **RFID card reading** — RC522 module (Raspberry Pi)
+- **Fingerprint** — Deneyap DY50 sensor (optional)
+- **GPS tracking** — SIM808 module with location logging (optional)
+- **Web interface** — Live attendance tracking, map view, QR code generation
+- **Simulation mode** — Test without Raspberry Pi on any PC
+- **Audio feedback** — success/error sounds, TTS (optional)
+- **Offline operation** — no internet required, local SQLite/JSON
+- **WebSocket** — real-time card reading events
+- **Barcode/QR** — JsBarcode integration
 
 ---
 
-## Donanım Gereksinimleri
+## Hardware Requirements
 
-| Bileşen | Model | Zorunlu mu? |
+| Component | Model | Required? |
 |---|---|---|
-| Ana kart | Raspberry Pi 3/4/5 veya Orange Pi | Evet (production) |
-| RFID okuyucu | RC522 (SPI) | Evet |
-| Parmak izi | Deneyap DY50 | Hayır |
-| GPS modülü | SIM808 | Hayır |
-| Ekran | Herhangi HDMI ekran veya SSH | Hayır |
+| Main board | Raspberry Pi 3/4/5 or Orange Pi | Yes (production) |
+| RFID reader | RC522 (SPI) | Yes |
+| Fingerprint sensor | Deneyap DY50 | No |
+| GPS module | SIM808 | No |
+| Display | Any HDMI display or SSH | No |
 
-> Normal PC'de `--simulate` bayrağıyla donanım olmadan çalışır.
+> On any PC, use `--simulate` flag to run without hardware.
 
 ---
 
-## Kurulum
+## Setup
 
-### Normal PC (Simülasyon Modu)
+### PC (Simulation Mode)
 
 ```bash
-# 1. Repoyu klonla
+# 1. Clone the repo
 git clone https://github.com/hamzozcan/TAMGA-ADKS.git
 cd TAMGA-ADKS
 
-# 2. Sanal ortam oluştur
+# 2. Create virtual environment
 python3 -m venv venv
 source venv/bin/activate   # Windows: venv\Scripts\activate
 
-# 3. Bağımlılıkları kur
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Simülasyon modunda başlat
+# 4. Run in simulation mode
 python tamga_backend.py --simulate
 
-# 5. Tarayıcıda aç
+# 5. Open in browser
 # → http://localhost:8000
 ```
 
-### Raspberry Pi (Gerçek Donanım)
+### Raspberry Pi (Real Hardware)
 
 ```bash
-# 1. Repoyu klonla
+# 1. Clone the repo
 git clone https://github.com/hamzozcan/TAMGA-ADKS.git
 cd TAMGA-ADKS
 
-# 2. Kurulum betiğini çalıştır
+# 2. Run setup script
 chmod +x start_all.sh
 ./start_all.sh
 
-# veya doğrudan:
+# Or directly:
 python tamga_backend.py
 ```
 
-### Servis olarak çalıştırma (systemd)
+### Run as a Service (systemd)
 ```bash
 sudo cp donanim/tamga_adks_server.service /etc/systemd/system/
 sudo systemctl enable tamga_adks_server
@@ -80,56 +82,64 @@ sudo systemctl start tamga_adks_server
 
 ---
 
-## Kullanım
+## Usage
 
-| Adres | Açıklama |
+| Address | Description |
 |---|---|
-| `http://[RPi-IP]:8000` | Ana web arayüzü |
-| `http://[RPi-IP]:8000/docs` | API dökümantasyonu |
-| `WS://[RPi-IP]:8000/ws` | Gerçek zamanlı kart olayları |
+| `http://[RPi-IP]:8000` | Main web interface |
+| `http://[RPi-IP]:8000/docs` | API documentation |
+| `WS://[RPi-IP]:8000/ws` | Real-time card events |
 
-### Komut Satırı Seçenekleri
+### CLI Options
 ```bash
 python tamga_backend.py --help
 
-  --simulate    Donanım olmadan simülasyon modu (PC'de test)
-  --port 8080   Farklı port (varsayılan: 8000)
+  --simulate    Simulation mode without hardware (for PC testing)
+  --port 8080   Custom port (default: 8000)
 ```
 
 ---
 
-## Dosya Yapısı
+## File Structure
 
 ```
 TAMGA-ADKS/
-├── tamga_backend.py       ← Ana FastAPI sunucusu
-├── tamga_launcher.py      ← Masaüstü başlatıcı (pywebview)
-├── tamga_voice_trainer.py ← Ses eğitim aracı
-├── tamga_config.json      ← Sistem konfigürasyonu
-├── requirements.txt       ← Python bağımlılıkları
-├── start_all.sh           ← Tek komutla başlatma
+├── tamga_backend.py       ← Main FastAPI server
+├── tamga_launcher.py      ← Desktop launcher (pywebview)
+├── tamga_voice_trainer.py ← Voice training tool
+├── tamga_config.json      ← System configuration
+├── requirements.txt       ← Python dependencies
+├── start_all.sh           ← Single-command startup
 ├── templates/
-│   └── tamga.html         ← Web arayüzü
-├── static/                ← CSS, JS, görseller
-├── donanim/               ← Arduino/RPi kurulum dosyaları
-│   ├── arduino_sim808_gps/    ← GPS Arduino kodu
-│   ├── deneyap_dy50_fingerprint/ ← Parmak izi kodu
-│   └── esp32/                 ← ESP32 entegrasyon
-├── belgeler/              ← Kurulum ve sistem belgeleri
+│   └── tamga.html         ← Web interface
+├── static/                ← CSS, JS, images
+├── donanim/               ← Arduino/RPi setup files
+│   ├── arduino_sim808_gps/       ← GPS Arduino code
+│   ├── deneyap_dy50_fingerprint/ ← Fingerprint sensor code
+│   └── esp32/                    ← ESP32 integration
+├── belgeler/              ← Setup and system documentation
 │   ├── kurulum_rehberi.md
 │   ├── SISTEM_SEMASI.md
 │   └── INTERNETSIZ_SISTEM.md
-└── data/                  ← Yerel kayıt veritabanı
+└── data/                  ← Local record database
 ```
 
 ---
 
-## Teknolojiler
+## Tech Stack
 
-- **FastAPI** + **Uvicorn** — web sunucusu
-- **WebSocket** — gerçek zamanlı iletişim
-- **RPi.GPIO** + **mfrc522** — RFID okuma (RPi)
-- **Folium** — harita üretimi
-- **pywebview** — native masaüstü pencere
-- **JsBarcode** — barkod/QR üretimi
-- **Arduino/ESP32** — harici sensör entegrasyonu
+- **FastAPI** + **Uvicorn** — web server
+- **WebSocket** — real-time communication
+- **RPi.GPIO** + **mfrc522** — RFID reading (RPi)
+- **Folium** — map generation
+- **pywebview** — native desktop window
+- **JsBarcode** — barcode/QR generation
+- **Arduino/ESP32** — external sensor integration
+
+---
+
+## Award
+
+This project won **1st Place** in the regional TÜBİTAK 2204-A High School Research Projects Competition and advanced to the **Turkey Finals**.
+
+TÜBİTAK 2204-A is Turkey's most prestigious national science competition for high school students.
