@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAMGA · AFAD Merkez Operasyon Paneli</title>
+<style>
+  :root{
+    --bg:#07111d;
+    --bg2:#0d1d31;
+    --panel:#10253f;
+    --panel-2:#122b48;
+    --line:rgba(125,211,252,.14);
+    --txt:#eef6ff;
+    --mut:#99adc6;
+    --acc:#7dd3fc;
+    --ok:#34d399;
+    --warn:#fbbf24;
+    --err:#f87171;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:
+    radial-gradient(1200px 500px at 0% 0%,rgba(30,64,175,.14),transparent 60%),
+    radial-gradient(1000px 500px at 100% 100%,rgba(14,165,233,.10),transparent 55%),
+    linear-gradient(180deg,#07111d,#091521 55%,#08111c 100%);
+    color:var(--txt);font-family:Segoe UI,system-ui,sans-serif}
+  .app{display:grid;grid-template-rows:84px 1fr;height:100%}
+  .hdr{
+    display:flex;align-items:center;justify-content:space-between;padding:0 22px;
+    border-bottom:1px solid var(--line);background:rgba(7,17,29,.86);backdrop-filter:blur(14px)
+  }
+  .brand{display:flex;align-items:center;gap:16px}
+  .brand img{display:block;object-fit:contain}
+  .afad-logo{height:48px}
+  .tubitak-logo{height:44px;opacity:.95}
+  .brand-copy{display:flex;flex-direction:column;gap:4px}
+  .eyebrow{font-size:11px;color:var(--acc);letter-spacing:1.2px;text-transform:uppercase;font-weight:700}
+  .ttl{font-size:22px;font-weight:900;letter-spacing:.2px}
+  .sub{font-size:12px;color:var(--mut)}
+  .hdr-right{display:flex;align-items:center;gap:10px}
+  .status-pill,.logout-btn{
+    border-radius:999px;border:1px solid var(--line);padding:9px 14px;font-size:12px;font-weight:700
+  }
+  .status-pill{background:rgba(125,211,252,.08);color:var(--acc)}
+  .logout-btn{background:rgba(248,113,113,.08);color:#fecaca;cursor:pointer;display:none}
+  .logout-btn:hover{border-color:rgba(248,113,113,.3)}
+  .main{padding:16px;display:grid;grid-template-rows:auto auto 1fr;gap:14px;min-height:0}
+  .summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+  .sum-card,.module{
+    border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,rgba(16,37,63,.92),rgba(10,22,35,.92));
+    box-shadow:0 18px 50px rgba(0,0,0,.18)
+  }
+  .sum-card{padding:16px 18px;position:relative;overflow:hidden}
+  .sum-card::after{
+    content:'';position:absolute;right:-25px;top:-25px;width:110px;height:110px;border-radius:50%;
+    background:radial-gradient(circle,rgba(125,211,252,.18),transparent 70%)
+  }
+  .sum-k{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:1px}
+  .sum-v{margin-top:8px;font-size:34px;font-weight:900}
+  .sum-s{margin-top:8px;font-size:12px;color:var(--mut)}
+  .notice{
+    display:flex;justify-content:space-between;gap:10px;align-items:center;padding:14px 16px;
+    border:1px solid rgba(52,211,153,.18);border-radius:16px;background:rgba(52,211,153,.06)
+  }
+  .notice b{color:#d1fae5}
+  .layout{display:grid;grid-template-columns:1.55fr 1fr 1fr;gap:14px;min-height:0}
+  .module{padding:16px;display:flex;flex-direction:column;min-height:0}
+  .st{font-size:12px;font-weight:900;letter-spacing:1px;color:var(--acc);text-transform:uppercase;margin-bottom:12px}
+  .table-wrap,.feed{overflow:auto;min-height:0}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:11px 8px;text-align:left;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px;vertical-align:top}
+  th{position:sticky;top:0;background:rgba(16,37,63,.98);font-size:11px;color:var(--mut);letter-spacing:.6px}
+  .badge{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid
+  }
+  .online{color:var(--ok);border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.08)}
+  .stale{color:var(--warn);border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.08)}
+  .offline{color:var(--err);border-color:rgba(248,113,113,.35);background:rgba(248,113,113,.08)}
+  .item{
+    padding:12px;border:1px solid rgba(255,255,255,.05);border-radius:14px;background:rgba(255,255,255,.02);margin-bottom:10px
+  }
+  .item:last-child{margin-bottom:0}
+  .item-head{display:flex;justify-content:space-between;gap:8px}
+  .item-title{font-weight:800}
+  .item-time{font-size:11px;color:var(--mut)}
+  .item-meta{font-size:11px;color:var(--mut);line-height:1.55;margin-top:6px}
+  .item-body{font-size:13px;line-height:1.55;margin-top:8px;word-break:break-word}
+  .empty{font-size:12px;color:var(--mut);padding:8px 2px}
+  .login-wrap{
+    position:fixed;inset:0;background:rgba(4,10,18,.88);backdrop-filter:blur(16px);
+    display:flex;align-items:center;justify-content:center;z-index:1000
+  }
+  .login-card{
+    width:min(460px,92vw);padding:24px;border:1px solid var(--line);border-radius:22px;
+    background:linear-gradient(180deg,rgba(16,37,63,.96),rgba(9,21,33,.98));
+    box-shadow:0 30px 80px rgba(0,0,0,.35)
+  }
+  .login-logos{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+  .login-logos img:first-child{height:54px}
+  .login-logos img:last-child{height:46px}
+  .login-title{font-size:24px;font-weight:900}
+  .login-sub{font-size:13px;color:var(--mut);margin-top:8px;line-height:1.6}
+  .inp{
+    width:100%;margin-top:10px;padding:14px 15px;border-radius:14px;border:1px solid var(--line);
+    background:rgba(13,29,49,.95);color:var(--txt);outline:none;font-size:14px
+  }
+  .inp:focus{border-color:rgba(125,211,252,.5);box-shadow:0 0 0 3px rgba(125,211,252,.08)}
+  .btn{
+    width:100%;margin-top:12px;padding:14px 16px;border:none;border-radius:14px;cursor:pointer;
+    background:linear-gradient(135deg,#0ea5e9,#2563eb);color:#fff;font-size:14px;font-weight:800;letter-spacing:.3px
+  }
+  .btn:hover{filter:brightness(1.08)}
+  .login-msg{min-height:20px;margin-top:10px;font-size:12px;color:var(--mut)}
+  .hidden{display:none!important}
+  @media (max-width:1280px){
+    .layout{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:900px){
+    .summary-grid,.layout{grid-template-columns:1fr}
+    .hdr{padding:0 12px;height:auto;min-height:84px;flex-wrap:wrap;gap:10px}
+    .brand{flex-wrap:wrap}
+    .afad-logo{height:40px}
+    .tubitak-logo{height:34px}
+    .main{padding:10px}
+  }
+</style>
+</head>
+<body>
+<div class="login-wrap" id="login-wrap">
+  <div class="login-card">
+    <div class="login-logos">
+      <img src="/static/brand/afad-logo.png" alt="AFAD">
+      <img src="/static/brand/tubitak-logo-white.png" alt="TÜBİTAK">
+    </div>
+    <div class="login-title">AFAD Güvenli Erişim</div>
+    <div class="login-sub">
+      Bu panel sadece yetkili kullanıcılar içindir. Giriş yaptıktan sonra saha düğümlerinin canlı snapshot akışı,
+      yakın mesajları ve kritik triyaj yoğunluğu tek merkezde görüntülenir.
+    </div>
+    <input id="login-user" class="inp" placeholder="Kullanıcı adı" autocomplete="username">
+    <input id="login-pass" class="inp" placeholder="Şifre" type="password" autocomplete="current-password">
+    <button class="btn" id="login-btn" onclick="login()">AFAD Paneline Gir</button>
+    <div class="login-msg" id="login-msg">Hazır</div>
+  </div>
+</div>
+
+<div class="app">
+  <div class="hdr">
+    <div class="brand">
+      <img class="afad-logo" src="/static/brand/afad-logo.png" alt="AFAD Logosu">
+      <div class="brand-copy">
+        <div class="eyebrow">TAMGA / AFAD Entegrasyonu</div>
+        <div class="ttl">AFAD Merkez Operasyon Paneli</div>
+        <div class="sub">Güvenli oturum, merkezi düğüm izleme, aile mesaj akışı ve triyaj görünürlüğü</div>
+      </div>
+      <img class="tubitak-logo" src="/static/brand/tubitak-logo-white.png" alt="TÜBİTAK Logosu">
+    </div>
+    <div class="hdr-right">
+      <div class="status-pill" id="sync-status">Oturum doğrulanıyor...</div>
+      <button class="logout-btn" id="logout-btn" onclick="logout()">Çıkış</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="summary-grid">
+      <div class="sum-card"><div class="sum-k">Toplam Düğüm</div><div class="sum-v" id="sum-nodes">0</div><div class="sum-s">Merkeze snapshot gönderen saha cihazı</div></div>
+      <div class="sum-card"><div class="sum-k">Online Düğüm</div><div class="sum-v" id="sum-online">0</div><div class="sum-s">120 saniye içinde güncellenen düğüm</div></div>
+      <div class="sum-card"><div class="sum-k">Toplam Kayıt</div><div class="sum-v" id="sum-records">0</div><div class="sum-s">Tüm bağlı düğümlerdeki kimliklendirme sayısı</div></div>
+      <div class="sum-card"><div class="sum-k">Kritik Triyaj</div><div class="sum-v" id="sum-critical">0</div><div class="sum-s">Kırmızı + siyah toplamı</div></div>
+    </div>
+
+    <div class="notice">
+      <div><b id="triage-line">Triyaj özeti yükleniyor...</b><div class="sub" id="transfer-line">Transfer özeti yükleniyor...</div></div>
+      <div class="sub">Bu paneldeki veri, internete açık AFAD merkezi node'una push edilen snapshot'lardan oluşur.</div>
+    </div>
+
+    <div class="layout">
+      <div class="module">
+        <div class="st">Saha Düğüm Sağlığı</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Düğüm</th>
+                <th>Durum</th>
+                <th>Kayıt</th>
+                <th>Kritik</th>
+                <th>Konum</th>
+                <th>Son Güncelleme</th>
+              </tr>
+            </thead>
+            <tbody id="node-rows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="module">
+        <div class="st">Son Kimliklendirme Kayıtları</div>
+        <div class="feed" id="recent-records"></div>
+      </div>
+
+      <div class="module">
+        <div class="st">Yakın Portalı Mesajları</div>
+        <div class="feed" id="family-messages"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = location.origin;
+const STORAGE_KEY = 'tamga_afad_token';
+let afadToken = localStorage.getItem(STORAGE_KEY) || '';
+let refreshTimer = null;
+
+function esc(v){
+  return String(v ?? '').replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+}
+
+function authHeaders(){
+  return afadToken ? {'Authorization':'Bearer ' + afadToken} : {};
+}
+
+function fmtAge(sec){
+  sec = Number(sec || 0);
+  if(sec < 60) return `${sec} sn`;
+  if(sec < 3600) return `${Math.floor(sec/60)} dk`;
+  return `${Math.floor(sec/3600)} sa`;
+}
+
+function statusBadge(status){
+  const cls = status === 'online' ? 'online' : status === 'stale' ? 'stale' : 'offline';
+  const txt = status === 'online' ? 'ONLINE' : status === 'stale' ? 'GECİKMELİ' : 'OFFLINE';
+  return `<span class="badge ${cls}">${txt}</span>`;
+}
+
+function setSyncStatus(txt){
+  document.getElementById('sync-status').textContent = txt;
+}
+
+function startPolling(){
+  if(refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(loadDashboard, 10000);
+}
+
+function renderNodes(nodes){
+  const rows = (nodes || []).map(node=>`
+    <tr>
+      <td><b>${esc(node.node_label || node.node_id)}</b><div class="sub">${esc(node.node_id || '')}</div></td>
+      <td>${statusBadge(node.status)}</td>
+      <td>${esc(node.record_total || 0)}</td>
+      <td>${esc(node.critical_total || 0)}</td>
+      <td>${esc((node.gps||{}).lat ?? '-')}, ${esc((node.gps||{}).lon ?? '-')}</td>
+      <td>${esc(node.updated_at || '-')}<div class="sub">${fmtAge(node.age_seconds)} önce</div></td>
+    </tr>
+  `).join('');
+  document.getElementById('node-rows').innerHTML = rows || '<tr><td colspan="6" class="empty">Henüz düğüm verisi yok</td></tr>';
+}
+
+function renderFeed(targetId, items, renderer){
+  const box = document.getElementById(targetId);
+  if(!items || !items.length){
+    box.innerHTML = '<div class="empty">Veri yok</div>';
+    return;
+  }
+  box.innerHTML = items.map(renderer).join('');
+}
+
+function recordCard(rec){
+  return `<div class="item">
+    <div class="item-head">
+      <div class="item-title">${esc(rec.name || 'Bilinmiyor')}</div>
+      <div class="item-time">${esc(rec.timestamp || '')}</div>
+    </div>
+    <div class="item-meta">${esc(rec.node_label || rec.node_id || '')} · ${esc(rec.id || '')} · ${esc(rec.triage || '-')} · ${esc(rec.transfer || '-')}</div>
+  </div>`;
+}
+
+function familyCard(msg){
+  return `<div class="item">
+    <div class="item-head">
+      <div class="item-title">${esc(msg.sender || 'Yakın')}</div>
+      <div class="item-time">${esc(msg.timestamp || '')}</div>
+    </div>
+    <div class="item-meta">${esc(msg.node_label || msg.node_id || '')} · ${esc(msg.person_id || msg.person_name || 'Kişi belirtilmedi')}</div>
+    <div class="item-body">${esc(msg.message || '')}</div>
+  </div>`;
+}
+
+async function login(){
+  const user = (document.getElementById('login-user').value || '').trim();
+  const password = document.getElementById('login-pass').value || '';
+  const msg = document.getElementById('login-msg');
+  if(!user || !password){
+    msg.textContent = 'Kullanıcı adı ve şifre zorunlu';
+    return;
+  }
+  msg.textContent = 'Doğrulanıyor...';
+  try{
+    const res = await fetch(API + '/api/afad/auth/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:user, password})
+    });
+    const data = await res.json();
+    if(!res.ok || !data.success){
+      throw new Error(data.error || data.detail || 'Giriş başarısız');
+    }
+    afadToken = data.token;
+    localStorage.setItem(STORAGE_KEY, afadToken);
+    document.getElementById('login-wrap').classList.add('hidden');
+    document.getElementById('logout-btn').style.display = 'inline-flex';
+    setSyncStatus(`Oturum: ${data.username} / ${data.role}`);
+    loadDashboard();
+    startPolling();
+  }catch(err){
+    msg.textContent = err.message || 'Giriş başarısız';
+  }
+}
+
+function logout(){
+  if(refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = null;
+  afadToken = '';
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('login-wrap').classList.remove('hidden');
+  document.getElementById('logout-btn').style.display = 'none';
+  setSyncStatus('Oturum kapatıldı');
+}
+
+async function restoreSession(){
+  if(!afadToken){
+    setSyncStatus('Giriş bekleniyor');
+    return false;
+  }
+  try{
+    const res = await fetch(API + '/api/afad/auth/me', {headers: authHeaders()});
+    if(!res.ok) throw new Error('expired');
+    const data = await res.json();
+    document.getElementById('login-wrap').classList.add('hidden');
+    document.getElementById('logout-btn').style.display = 'inline-flex';
+    setSyncStatus(`Oturum: ${data.username} / ${data.role}`);
+    return true;
+  }catch(_){
+    logout();
+    return false;
+  }
+}
+
+async function loadDashboard(){
+  if(!afadToken) return;
+  try{
+    const res = await fetch(API + '/api/afad/dashboard', {headers: authHeaders()});
+    if(res.status === 401 || res.status === 403){
+      logout();
+      return;
+    }
+    const data = await res.json();
+    const s = data.summary || {};
+    document.getElementById('sum-nodes').textContent = s.node_count || 0;
+    document.getElementById('sum-online').textContent = s.online_nodes || 0;
+    document.getElementById('sum-records').textContent = s.total_records || 0;
+    document.getElementById('sum-critical').textContent = s.critical_total || 0;
+    const tri = s.triage || {};
+    const trf = s.transfer || {};
+    document.getElementById('triage-line').textContent =
+      `Kırmızı ${tri['KIRMIZI']||0} · Sarı ${tri['SARI']||0} · Yeşil ${tri['YEŞİL']||0} · Siyah ${tri['SİYAH']||0}`;
+    document.getElementById('transfer-line').textContent =
+      Object.keys(trf).length ? Object.entries(trf).map(([k,v])=>`${k}: ${v}`).join(' · ') : 'Transfer verisi yok';
+    renderNodes(data.nodes || []);
+    renderFeed('recent-records', data.recent_records || [], recordCard);
+    renderFeed('family-messages', data.family_messages || [], familyCard);
+    setSyncStatus(`Son güncelleme: ${new Date().toLocaleTimeString('tr-TR')}`);
+  }catch(err){
+    setSyncStatus('Panel verisi alınamadı');
+  }
+}
+
+restoreSession().then(ok=>{
+  if(ok){
+    loadDashboard();
+    startPolling();
+  }
+});
+
+document.getElementById('login-pass').addEventListener('keydown', e=>{ if(e.key === 'Enter') login(); });
+</script>
+</body>
+</html>

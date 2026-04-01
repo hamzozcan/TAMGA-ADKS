@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAMGA-ADKS · Mesaj Merkezi</title>
+<style>
+  :root{
+    --bg:#040b16;
+    --bg2:#081425;
+    --card:#0b1a2f;
+    --line:rgba(56,189,248,.25);
+    --txt:#e6f3ff;
+    --mut:#7b92ad;
+    --acc:#38bdf8;
+    --ok:#22d3a0;
+    --err:#f87171;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--txt);font-family:Segoe UI,system-ui,sans-serif}
+  .app{display:grid;grid-template-rows:56px 1fr;height:100%}
+  .hdr{
+    display:flex;align-items:center;justify-content:space-between;padding:0 14px;
+    border-bottom:1px solid var(--line);background:linear-gradient(90deg,#06101f,#0a1c33);
+  }
+  .ttl{font-size:15px;font-weight:800;letter-spacing:.4px}
+  .sub{font-size:11px;color:var(--mut)}
+  .btn{
+    border:1px solid var(--line);background:rgba(56,189,248,.12);color:var(--txt);
+    border-radius:8px;padding:7px 10px;cursor:pointer;font-size:12px;font-weight:700
+  }
+  .btn:hover{border-color:var(--acc);color:var(--acc)}
+  .main{display:grid;grid-template-columns:360px 1fr;gap:10px;padding:10px;min-height:0}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;min-height:0;
+    display:flex;flex-direction:column;
+  }
+  .st{font-size:11px;font-weight:800;color:var(--acc);letter-spacing:.7px;margin-bottom:8px}
+  .inp,.tx{
+    width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:8px;
+    color:var(--txt);padding:8px 10px;font-size:12px;outline:none;margin-bottom:8px;
+  }
+  .tx{min-height:120px;resize:vertical}
+  .row{display:flex;gap:6px}
+  .feed{overflow-y:auto;min-height:0;padding-right:2px}
+  .msg{
+    border:1px solid var(--line);background:rgba(255,255,255,.02);border-radius:8px;
+    padding:8px;margin-bottom:8px;
+  }
+  .mh{display:flex;justify-content:space-between;gap:8px}
+  .ms{font-size:11px;font-weight:700;color:var(--acc)}
+  .mt{font-size:10px;color:var(--mut);font-family:monospace}
+  .mp{font-size:10px;color:#93c5fd;margin-top:2px}
+  .mb{font-size:12px;line-height:1.45;margin-top:6px;word-break:break-word}
+  #status{font-size:11px;color:var(--mut);margin-top:2px}
+  .ok{color:var(--ok)!important}
+  .err{color:var(--err)!important}
+  @media (max-width:980px){.main{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hdr">
+    <div>
+      <div class="ttl">📨 KİŞİ MESAJ MERKEZİ</div>
+      <div class="sub">Ana arayüz ve bu ekran arasında gerçek zamanlı mesajlaşma</div>
+    </div>
+    <button class="btn" onclick="window.open('/','_blank')">Ana Ekranı Aç</button>
+  </div>
+  <div class="main">
+    <div class="card">
+      <div class="st">MESAJ GÖNDER</div>
+      <input id="sender" class="inp" placeholder="Gönderen (örn: Saha-1)">
+      <input id="person-id" class="inp" list="persons" placeholder="Kişi Kimlik No (opsiyonel)">
+      <datalist id="persons"></datalist>
+      <input id="person-name" class="inp" placeholder="Kişi Ad Soyad (opsiyonel)">
+      <textarea id="msg" class="tx" placeholder="Kişi hakkında mesajınızı yazın..."></textarea>
+      <div class="row">
+        <button class="btn" style="flex:1" onclick="sendMsg()">📤 Gönder</button>
+        <button class="btn" onclick="loadMessages()">↻</button>
+      </div>
+      <div id="status">Hazır</div>
+    </div>
+    <div class="card">
+      <div class="row" style="align-items:center;margin-bottom:8px">
+        <div class="st" style="margin:0">GELEN MESAJLAR</div>
+        <input id="filter" class="inp" style="margin:0 0 0 auto;max-width:260px" placeholder="Kişi ID ile filtrele..." oninput="renderMessages()">
+      </div>
+      <div id="feed" class="feed"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = location.origin;
+const WS  = (location.protocol==='https:'?'wss':'ws') + '://' + location.host + '/ws';
+let msgCache = [];
+
+function esc(v){
+  return String(v||'').replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+}
+
+function setStatus(txt, cls=''){
+  const el=document.getElementById('status');
+  if(!el)return;
+  el.textContent=txt;
+  el.className=cls;
+}
+
+function personLabel(m){
+  const pid=(m.person_id||'').trim();
+  const pnm=(m.person_name||'').trim();
+  if(pid&&pnm)return `${pid} • ${pnm}`;
+  if(pid)return pid;
+  if(pnm)return pnm;
+  return 'Kişi belirtilmedi';
+}
+
+function renderMessages(){
+  const f=(document.getElementById('filter')?.value||'').trim().toLowerCase();
+  const rows=msgCache
+    .filter(m=>!f || String(m.person_id||'').toLowerCase().includes(f))
+    .slice()
+    .reverse()
+    .map(m=>`<div class="msg">
+      <div class="mh">
+        <span class="ms">${esc(m.sender||'Operatör')}</span>
+        <span class="mt">${esc(m.timestamp||'')}</span>
+      </div>
+      <div class="mp">${esc(personLabel(m))}</div>
+      <div class="mb">${esc(m.message||'')}</div>
+    </div>`).join('');
+  document.getElementById('feed').innerHTML = rows || '<div class="mp">Mesaj yok</div>';
+}
+
+async function loadMessages(){
+  try{
+    const data=await fetch(API+'/api/messages?limit=300').then(r=>r.json());
+    msgCache=Array.isArray(data)?data:[];
+    renderMessages();
+    setStatus(`Yüklendi: ${msgCache.length} mesaj`, 'ok');
+  }catch(e){
+    setStatus('Mesajlar alınamadı', 'err');
+  }
+}
+
+async function loadPersons(){
+  try{
+    const recs=await fetch(API+'/api/records').then(r=>r.json());
+    const dl=document.getElementById('persons');
+    if(!dl)return;
+    dl.innerHTML=(Array.isArray(recs)?recs:[]).slice(-500).map(r=>{
+      const id=esc(r['KİMLİK NO']||'');
+      const ad=esc(r['AD SOYAD']||'');
+      return `<option value="${id}">${ad}</option>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function sendMsg(){
+  const message=(document.getElementById('msg')?.value||'').trim();
+  if(!message){setStatus('Mesaj boş olamaz', 'err');return;}
+  const payload={
+    sender:(document.getElementById('sender')?.value||'Mesaj Ekranı').trim(),
+    person_id:(document.getElementById('person-id')?.value||'').trim(),
+    person_name:(document.getElementById('person-name')?.value||'').trim(),
+    message,
+    source:'messages-ui'
+  };
+  try{
+    const r=await fetch(API+'/api/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    document.getElementById('msg').value='';
+    setStatus('Mesaj gönderildi', 'ok');
+  }catch(e){
+    setStatus('Mesaj gönderilemedi', 'err');
+  }
+}
+
+function connectWS(){
+  const ws=new WebSocket(WS);
+  ws.onmessage=(e)=>{
+    try{
+      const d=JSON.parse(e.data);
+      if(d.type==='message_added'){
+        msgCache.push(d.data||{});
+        if(msgCache.length>2000)msgCache=msgCache.slice(-2000);
+        renderMessages();
+      }
+    }catch(_){}
+  };
+  ws.onclose=()=>setTimeout(connectWS,2000);
+}
+
+window.addEventListener('load',()=>{
+  document.getElementById('sender').value=localStorage.getItem('tamga_msg_sender')||'Mesaj Merkezi';
+  document.getElementById('sender').addEventListener('input',e=>localStorage.setItem('tamga_msg_sender',e.target.value));
+  document.getElementById('msg').addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='Enter')sendMsg();});
+  loadPersons();
+  loadMessages();
+  connectWS();
+});
+</script>
+</body>
+</html>

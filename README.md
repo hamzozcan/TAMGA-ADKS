@@ -27,6 +27,7 @@ Sistem internet olmadan çalışır, yerel kayıt tutar ve sahada hızlı kullan
 - **Gerçek zamanlı olaylar**: WebSocket desteği
 - **QR üretimi**: Kişi kartı/etiket için
 - **Harita önbelleği**: Çevrimdışı harita kutucukları
+- **Offline AI analiz fallback**: Gemini yoksa yerel tahmin motoru devreye girer
 - **Simülasyon modu**: Donanım olmadan PC üzerinde test
 
 ---
@@ -46,11 +47,21 @@ Sistem internet olmadan çalışır, yerel kayıt tutar ve sahada hızlı kullan
 - `GET /api/export`
 - `GET /api/export/package`
 - `POST /api/sync`
+- `GET /api/afad/local-snapshot`
+- `POST /api/afad/ingest`
+- `GET /api/afad/dashboard`
+- `GET /api/family/search`
+- `POST /api/family/contact`
 
 Opsiyonel donanım uç noktaları:
 - `POST /api/rfid/read`
 - `POST /api/rfid/write`
 - `POST /api/fingerprint/scan`
+
+AI analiz notu:
+- `POST /api/ai_query` artık internet olmadan da çalışır.
+- `GEMINI_API_KEY` tanımlıysa Gemini yorumu eklenir.
+- Anahtar yoksa sistem yerel tahmin modeli ile rapor üretir.
 
 ---
 
@@ -129,17 +140,67 @@ sudo systemctl start tamga_adks_server
 ```text
 TAMGA-ADKS/
 ├── tamga_backend.py
+├── tamga_afad_bridge.py
 ├── tamga_launcher.py
 ├── tamga_voice_trainer.py
 ├── tamga_config.json
 ├── requirements.txt
 ├── start_all.sh
+├── start_afad_bridge.sh
 ├── templates/
 ├── static/
 ├── data/
 ├── donanim/
 └── belgeler/
 ```
+
+---
+
+## AFAD ve Yakın Portalı
+
+Sistem artık üç ayrı yüz sunar:
+
+- Ana saha ekranı: `/`
+- AFAD merkez paneli: `/afad`
+- Aile / yakın bilgi portalı: `/yakin` veya `/aile`
+
+### Erişim Güvenliği
+
+- AFAD panel API uç noktaları oturum gerektirir.
+- Giriş için mevcut kullanıcı hesapları kullanılır; `afad_dashboard` izni olan roller erişebilir.
+- Düğüm -> merkez veri aktarımı ayrıca `TAMGA_AFAD_SHARED_KEY` ile korunur.
+
+### Haberleşme Modeli
+
+- Saha cihazı yerelde çalışır ve kayıtları üretir.
+- Yakın portalı aynı cihazın Wi‑Fi ağı üzerinden yerel olarak erişilebilir.
+- Merkezi AFAD paneli internete açık ayrı bir sunucuda çalışır.
+- Saha cihazındaki bridge script belirli aralıklarla merkezi panele JSON snapshot yollar.
+
+### Bridge Kurulumu
+
+Merkezi sunucuda:
+
+```bash
+export TAMGA_AFAD_SHARED_KEY='guclu-bir-anahtar'
+python tamga_backend.py --host 0.0.0.0 --port 8000
+```
+
+Saha cihazında:
+
+```bash
+./start_afad_bridge.sh \
+  --remote-url https://afad-panel.example.com \
+  --shared-key 'guclu-bir-anahtar' \
+  --node-id BATMAN-01 \
+  --node-label 'Batman Saha 01'
+```
+
+Bridge şu akışı kullanır:
+
+1. Yerelden `GET /api/afad/local-snapshot`
+2. Merkeze `POST /api/afad/ingest`
+3. AFAD paneli `GET /api/afad/dashboard` ile tüm düğümleri toplar
 
 ---
 

@@ -43,7 +43,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text);
   box-shadow:0 1px 0 var(--brite), 0 4px 30px rgba(0,0,0,.8);
   position:relative;z-index:100;
 }
-.brand{display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .logo-hex{
   width:38px;height:38px;border-radius:9px;
   background:var(--acg);
@@ -55,6 +55,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text);
   background:linear-gradient(90deg,#fff,#93c5fd);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .brand-txt .sub{font-size:9.5px;color:var(--muted);margin-top:1px;letter-spacing:.3px}
+.brand-seals{display:flex;align-items:center;gap:10px;margin-left:4px}
+.brand-seals img{display:block;object-fit:contain;opacity:.95;filter:drop-shadow(0 2px 8px rgba(0,0,0,.35))}
+.brand-seals .afad-seal{height:26px}
+.brand-seals .tubitak-seal{height:22px}
 /* Sistem Logu — header mini widget */
 #sys-log-hdr{
   width:220px;height:38px;overflow:hidden;
@@ -112,10 +116,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text);
 /* ═══════════ APP LAYOUT ═══════════ */
 #app{display:flex;height:calc(100vh - 54px)}
 .panel{display:flex;flex-direction:column;overflow:hidden;position:relative}
-#left{flex:1;border-right:1px solid var(--border);background:var(--bg1)}
-#center{flex:1;border-right:1px solid var(--border);background:var(--bg1)}
-#right{flex:1;background:var(--bg1)}
-.p-scroll{overflow-y:auto;overflow-x:hidden;flex:1;padding:10px}
+.panel::before{
+  content:'';position:absolute;top:0;left:12px;right:12px;height:1px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(56,189,248,.4),transparent);opacity:.75;
+}
+#left{flex:1;border-right:1px solid var(--border);background:linear-gradient(180deg,#050d17 0%,#07121f 100%)}
+#center{flex:1;border-right:1px solid var(--border);background:linear-gradient(180deg,#050f1b 0%,#081423 100%)}
+#right{flex:1;background:linear-gradient(180deg,#06111c 0%,#081724 100%)}
+.p-scroll{
+  overflow-y:auto;overflow-x:hidden;flex:1;padding:10px;
+  background:radial-gradient(circle at top right,rgba(56,189,248,.05),transparent 28%);
+}
 
 /* ═══════════ SECTION TITLE ═══════════ */
 .sttl{
@@ -136,6 +147,55 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text);
   margin-bottom:8px;
 }
 .gc-hi{border-color:var(--brite);box-shadow:0 0 0 1px rgba(14,165,233,.08) inset}
+
+/* ═══════════ KURUMSAL OPERASYON KARTLARI ═══════════ */
+.ops-card{
+  background:
+    linear-gradient(180deg,rgba(7,18,34,.96),rgba(4,12,24,.9)),
+    radial-gradient(circle at top right,rgba(56,189,248,.1),transparent 45%);
+  border:1px solid rgba(56,189,248,.2);
+  box-shadow:0 18px 40px rgba(0,0,0,.28);
+}
+.ops-card-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;
+}
+.ops-eyebrow{
+  font-size:9px;font-weight:800;letter-spacing:1.4px;color:var(--accent);text-transform:uppercase;
+}
+.ops-title{
+  font-size:15px;font-weight:800;letter-spacing:.2px;color:#e8f3ff;margin-top:3px;
+}
+.ops-subtitle{
+  font-size:10px;color:var(--muted);line-height:1.45;margin-top:5px;
+}
+.ops-badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.ops-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:4px 9px;border-radius:999px;font-size:9px;font-weight:800;letter-spacing:.7px;
+  border:1px solid rgba(56,189,248,.2);background:rgba(56,189,248,.08);color:#cfeaff;
+}
+.ops-badge.warn{border-color:rgba(251,191,36,.28);background:rgba(251,191,36,.08);color:#fde68a}
+.ops-brief-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px;
+}
+.ops-brief-item{
+  background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.14);border-radius:10px;
+  padding:10px 11px;
+}
+.ops-brief-item span{
+  display:block;font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;
+}
+.ops-brief-item strong{
+  display:block;margin-top:4px;font-size:12px;font-weight:800;color:#f8fbff;
+}
+.ops-action-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+}
+.ops-note{
+  margin-top:9px;padding:8px 10px;border-radius:8px;
+  border:1px solid rgba(56,189,248,.14);background:rgba(56,189,248,.06);
+  font-size:10px;line-height:1.45;color:#c6def5;
+}
 
 /* ═══════════ FORM ═══════════ */
 .fr{display:flex;align-items:center;gap:7px;margin-bottom:7px}
@@ -164,6 +224,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg0);color:var(--text);
   outline:none;width:100%;
 }
 select.combo{width:100%;margin-bottom:5px}
+.dep-row{display:none}
+.dep-row.open{display:flex}
 
 /* ═══════════ BUTTONS ═══════════ */
 .btn{
@@ -244,6 +306,59 @@ select.combo{width:100%;margin-bottom:5px}
 .bio-l .bv{font-size:13px;font-weight:700;font-family:monospace;color:var(--accent);margin-top:1px}
 .bio-l .bv.ok{color:var(--ok)}
 .bio-l .bv.w{color:var(--muted);font-size:11px;font-weight:400}
+
+/* ═══════════ MESAJ MERKEZİ ═══════════ */
+#msg-card{margin-top:8px}
+#msg-feed{
+  max-height:160px;overflow-y:auto;
+  border:1px solid rgba(14,165,233,.15);
+  background:rgba(2,6,14,.55);
+  border-radius:7px;padding:6px;
+}
+.msg-item{
+  border:1px solid rgba(14,165,233,.14);
+  background:rgba(255,255,255,.02);
+  border-radius:6px;padding:6px;margin-bottom:6px;
+}
+.msg-item:last-child{margin-bottom:0}
+.msg-head{display:flex;justify-content:space-between;gap:8px}
+.msg-sender{font-size:10px;color:var(--accent);font-weight:700}
+.msg-time{font-size:9px;color:var(--muted);font-family:monospace}
+.msg-person{font-size:9px;color:#93c5fd;margin-top:2px}
+.msg-body{font-size:10px;color:var(--text);margin-top:4px;line-height:1.35;word-break:break-word}
+#msg-empty{font-size:10px;color:var(--muted);text-align:center;padding:8px 2px}
+#msg-controls{display:flex;gap:6px;margin-top:7px}
+#msg-person,#msg-text{
+  width:100%;background:var(--bg3);border:1px solid rgba(14,165,233,.15);
+  border-radius:6px;padding:6px 8px;color:var(--text);font-size:11px;outline:none;
+}
+#msg-text{margin-top:6px}
+
+.dp-tool-card{
+  background:
+    linear-gradient(180deg,rgba(7,18,34,.96),rgba(4,12,24,.92)),
+    radial-gradient(circle at top right,rgba(56,189,248,.08),transparent 45%);
+  border:1px solid rgba(56,189,248,.18);
+  border-radius:12px;padding:14px 15px;
+}
+.dp-tool-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;
+}
+.dp-tool-head strong{
+  display:block;font-size:11px;font-weight:900;letter-spacing:1px;color:#dbeafe;
+}
+.dp-tool-head span{
+  display:block;margin-top:4px;font-size:10px;line-height:1.45;color:var(--muted);
+}
+.dp-ai-preview{
+  min-height:76px;max-height:180px;overflow:auto;
+  border:1px solid rgba(56,189,248,.14);border-radius:9px;
+  background:rgba(2,6,14,.62);padding:10px;font-size:10px;line-height:1.55;color:#dceaf8;
+}
+.dp-inline-note{
+  font-size:10px;color:#93c5fd;margin-top:8px;line-height:1.45;
+}
+.dp-tool-actions{display:flex;gap:8px;margin-top:10px}
 
 /* ═══════════ HARITA ═══════════ */
 #map-wrap{
@@ -413,6 +528,9 @@ select.combo{width:100%;margin-bottom:5px}
 #dp-hdr h2{font-size:15px;font-weight:800;background:var(--acg);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent}
 #dp-body{flex:1;overflow:hidden;display:flex;flex-direction:column;padding:16px;gap:12px}
+#dp-content{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.7fr) 370px;gap:12px}
+#dp-main{min-width:0;min-height:0;display:flex;flex-direction:column;gap:12px}
+#dp-side{min-width:0;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding-right:2px}
 #dp-stats{display:flex;gap:10px;flex-shrink:0}
 .ds-card{
   flex:1;background:var(--bg1);border:1px solid var(--border);border-radius:10px;
@@ -468,6 +586,9 @@ code{font-family:monospace;color:var(--accent);font-size:10px}
   cursor:pointer;font-size:14px;padding:1px 6px;line-height:1;transition:transform .2s;
 }
 .dp-expand-btn.open{transform:rotate(180deg)}
+
+#dp-msg-card #msg-feed{max-height:260px}
+#dp-msg-card #msg-person,#dp-msg-card #msg-text{font-size:12px}
 
 /* ─── OTOPİLOT DİNAMİK RENKLER ─── */
 #autopilot-overlay{transition:background .4s}
@@ -588,6 +709,34 @@ code{font-family:monospace;color:var(--accent);font-size:10px}
 .lc-footer{margin-top:28px;font-size:10px;color:var(--muted);letter-spacing:1px}
 
 /* ═══════════ OTOPİLOT FAB (center panel buton) ═══════════ */
+#ap-ops-card .ops-card-head{margin-bottom:12px}
+#ap-mini-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px;
+}
+.ap-mini-item{
+  border:1px solid rgba(148,163,184,.14);border-radius:10px;background:rgba(255,255,255,.03);
+  padding:9px 10px;
+}
+.ap-mini-item span{
+  display:block;font-size:9px;letter-spacing:.9px;color:var(--muted);text-transform:uppercase;
+}
+.ap-mini-item strong{
+  display:block;margin-top:4px;font-size:12px;font-weight:800;color:#f8fbff;
+}
+.ap-mini-note{
+  font-size:10px;color:#cfe4f6;line-height:1.45;margin-top:8px;
+  padding:8px 10px;border-radius:9px;background:rgba(56,189,248,.06);border:1px solid rgba(56,189,248,.12);
+}
+.ap-mini-chip{
+  display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;
+  font-size:10px;font-weight:800;letter-spacing:.5px;
+  border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.03);color:#dbeafe;
+}
+.ap-mini-chip.live{border-color:rgba(239,68,68,.32);background:rgba(239,68,68,.12);color:#fca5a5}
+.ap-mini-chip.ready{border-color:rgba(56,189,248,.28);background:rgba(56,189,248,.1);color:#bae6fd}
+.ap-mini-chip.confirm{border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.12);color:#fde68a}
+.ap-mini-chip.saved{border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.12);color:#bbf7d0}
+.ap-inline-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 #ap-fab{
   width:100%;background:linear-gradient(135deg,#0ea5e9,#16a34a);
   border-radius:10px;padding:13px 22px;font-size:13px;font-weight:700;
@@ -777,11 +926,15 @@ code{font-family:monospace;color:var(--accent);font-size:10px}
 .ap-cmd-desc{font-size:10px;color:var(--muted);line-height:1.3}
 
 @media (max-width:1080px){
+  #dp-content{grid-template-columns:1fr}
+  #dp-side{overflow:visible;padding-right:0}
+  .ops-brief-grid{grid-template-columns:1fr}
   #ap-hud{display:none}
   #ap-body{flex-direction:column}
   #ap-right{width:100%}
 }
 @media (max-width:720px){
+  .ops-action-grid,.ap-inline-actions,#ap-mini-grid{grid-template-columns:1fr}
   #ap-hdr{padding:0 10px;gap:6px}
   #ap-hdr-title{font-size:12px;letter-spacing:.8px}
   #ap-hdr-mid{display:none}
@@ -884,6 +1037,10 @@ code{font-family:monospace;color:var(--accent);font-size:10px}
       <h1>TAMGA-ADKS</h1>
       <div class="sub">ACİL DURUM KİMLİKLENDİRME SİSTEMİ v2.0</div>
     </div>
+    <div class="brand-seals">
+      <img class="afad-seal" src="/static/brand/afad-logo.png" alt="AFAD">
+      <img class="tubitak-seal" src="/static/brand/tubitak-logo-white.png" alt="TÜBİTAK">
+    </div>
     <div id="sys-log-hdr">
       <div class="sl-title">SİSTEM LOGU</div>
       <div id="sys-log-list"></div>
@@ -907,7 +1064,7 @@ code{font-family:monospace;color:var(--accent);font-size:10px}
       <div id="clk">00:00:00</div>
       <div id="dt"></div>
     </div>
-    <button class="data-btn" onclick="openPWModal()">🔐 VERİ YÖNETİMİ</button>
+    <button class="data-btn" onclick="openPWModal()" data-i18n="btnDataManagement">🔐 VERİ YÖNETİMİ</button>
   </div>
 </div>
 
@@ -918,7 +1075,7 @@ code{font-family:monospace;color:var(--accent);font-size:10px}
   <div class="panel" id="left">
     <div class="p-scroll">
 
-      <div class="sttl">📁 OLAY KATEGORİSİ</div>
+      <div class="sttl" data-i18n="stEventCategory">📁 OLAY KATEGORİSİ</div>
       <select class="combo" id="f-cat" onchange="updateSubcat()">
         <option>Doğal Afetler</option><option>İnsan Hareketi</option>
         <option>Kazalar</option><option>Tıbbi Acil</option>
@@ -928,7 +1085,7 @@ code{font-family:monospace;color:var(--accent);font-size:10px}
         <option>Deprem</option><option>Sel</option><option>Çığ</option>
       </select>
 
-      <div class="sttl">⚕️ VÜCUT HARİTASI</div>
+      <div class="sttl" data-i18n="stBodyMap">⚕️ VÜCUT HARİTASI</div>
       <div id="body-wrap">
         <!-- Ön / Arka toggle -->
         <div id="body-view-toggle">
@@ -1044,17 +1201,17 @@ code{font-family:monospace;color:var(--accent);font-size:10px}
         <button class="g-btn" id="gb-f" onclick="setGender('Kadın')">👩 KADIN</button>
       </div>
       <input type="hidden" id="f-cinsiyet" value="Bilinmiyor">
-      <button class="btn b-ghost b-full b-sm" onclick="clearBody()" style="margin-bottom:10px">
+      <button class="btn b-ghost b-full b-sm" onclick="clearBody()" style="margin-bottom:10px" data-i18n="btnClearMarks">
         🗑️ İşaretleri Temizle
       </button>
 
-      <div class="sttl">🦷 DİŞ HARİTASI</div>
+      <div class="sttl" data-i18n="stTeethMap">🦷 DİŞ HARİTASI</div>
       <div class="jaw-lbl">ÜST ÇENE (1–16)</div>
       <div class="jaw-r" id="jaw-up"></div>
       <div class="jaw-lbl" style="margin-top:5px">ALT ÇENE (17–32)</div>
       <div class="jaw-r" id="jaw-lo"></div>
       <input type="hidden" id="f-dis">
-      <button class="btn b-ghost b-full b-sm" onclick="clearTeeth()" style="margin-top:5px">
+      <button class="btn b-ghost b-full b-sm" onclick="clearTeeth()" style="margin-top:5px" data-i18n="btnClearTeeth">
         🗑️ Dişleri Temizle
       </button>
 
@@ -1065,74 +1222,122 @@ code{font-family:monospace;color:var(--accent);font-size:10px}
   <div class="panel" id="center">
     <div class="p-scroll">
 
-      <div class="sttl">📋 KİMLİK DETAYLARI</div>
+      <div class="sttl" data-i18n="stIdentityDetails">📋 KİMLİK DETAYLARI</div>
 
       <div class="gc gc-hi">
         <div class="fr">
-          <label>AD SOYAD</label>
-          <input id="f-adsoyad" type="text" placeholder="Bilinmiyor">
+          <label data-i18n="lblNameSurname">AD SOYAD</label>
+          <input id="f-adsoyad" type="text" data-i18n-ph="phUnknown" placeholder="Bilinmiyor">
         </div>
       </div>
 
-      <div class="sttl">📋 PROTOKOL & DETAY</div>
+      <div class="sttl" data-i18n="stProtocolDetail">📋 PROTOKOL & DETAY</div>
       <div class="gc">
-        <div class="fr"><label>OLAY KODU</label><input id="f-olay" type="text" placeholder="DP01"></div>
-        <div class="fr"><label>EKİP</label><input id="f-ekip" type="text" placeholder="Ekip A"></div>
+        <div class="fr"><label data-i18n="lblIncidentCode">OLAY KODU</label><input id="f-olay" type="text" data-i18n-ph="phIncidentCode" placeholder="DP01"></div>
+        <div class="fr"><label data-i18n="lblTeam">EKİP</label><input id="f-ekip" type="text" data-i18n-ph="phTeam" placeholder="Ekip A"></div>
         <div class="fr">
-          <label>BİLİNÇ</label>
+          <label data-i18n="lblConsciousness">BİLİNÇ</label>
           <select id="f-bilinc">
-            <option>Açık</option><option>Kapalı</option><option>Bilinmiyor</option>
+            <option value="Açık" data-i18n="optConsciousOpen">Açık</option>
+            <option value="Kapalı" data-i18n="optConsciousClosed">Kapalı</option>
+            <option value="Bilinmiyor" data-i18n="optUnknown">Bilinmiyor</option>
           </select>
         </div>
         <div class="fr">
-          <label>TRİYAJ</label>
+          <label data-i18n="lblTriage">TRİYAJ</label>
           <select id="f-triyaj-sel" onchange="syncTr(this.value)">
-            <option value="">— Seçin —</option>
-            <option value="YEŞİL (Hafif)">YEŞİL (Hafif)</option>
-            <option value="SARI (Gecikmeli)">SARI (Gecikmeli)</option>
-            <option value="KIRMIZI (Acil)">KIRMIZI (Acil)</option>
-            <option value="SİYAH (Ölü)">SİYAH (Ölü)</option>
+            <option value="" data-i18n="optSelect">— Seçin —</option>
+            <option value="YEŞİL (Hafif)" data-i18n="optTriageGreen">YEŞİL (Hafif)</option>
+            <option value="SARI (Gecikmeli)" data-i18n="optTriageYellow">SARI (Gecikmeli)</option>
+            <option value="KIRMIZI (Acil)" data-i18n="optTriageRed">KIRMIZI (Acil)</option>
+            <option value="SİYAH (Ölü)" data-i18n="optTriageBlack">SİYAH (Ölü)</option>
           </select>
         </div>
       </div>
 
       <input type="hidden" id="f-triyaj">
 
-      <div class="sttl">🧬 FİZİKSEL ÖZELLİKLER</div>
+      <div class="sttl" data-i18n="stPhysicalFeatures">🧬 FİZİKSEL ÖZELLİKLER</div>
       <div class="gc">
         <div class="fr2">
-          <div class="f2"><label>GÖZ RENGİ</label>
+          <div class="f2"><label data-i18n="lblEyeColor">GÖZ RENGİ</label>
             <select id="f-goz">
-              <option>Kahverengi</option><option>Mavi</option><option>Yeşil</option>
-              <option>Siyah</option><option>Ela</option><option>Gri</option><option>Bilinmiyor</option>
+              <option value="Kahverengi" data-i18n="optEyeBrown">Kahverengi</option>
+              <option value="Mavi" data-i18n="optEyeBlue">Mavi</option>
+              <option value="Yeşil" data-i18n="optEyeGreen">Yeşil</option>
+              <option value="Siyah" data-i18n="optEyeBlack">Siyah</option>
+              <option value="Ela" data-i18n="optEyeHazel">Ela</option>
+              <option value="Gri" data-i18n="optEyeGray">Gri</option>
+              <option value="Bilinmiyor" data-i18n="optUnknown">Bilinmiyor</option>
             </select></div>
-          <div class="f2"><label>SAÇ RENGİ</label>
+          <div class="f2"><label data-i18n="lblHairColor">SAÇ RENGİ</label>
             <select id="f-sac">
-              <option>Siyah</option><option>Kahverengi</option><option>Sarı</option>
-              <option>Kızıl</option><option>Gri</option><option>Beyaz</option><option>Bilinmiyor</option>
+              <option value="Siyah" data-i18n="optHairBlack">Siyah</option>
+              <option value="Kahverengi" data-i18n="optHairBrown">Kahverengi</option>
+              <option value="Sarı" data-i18n="optHairBlond">Sarı</option>
+              <option value="Kızıl" data-i18n="optHairRed">Kızıl</option>
+              <option value="Gri" data-i18n="optHairGray">Gri</option>
+              <option value="Beyaz" data-i18n="optHairWhite">Beyaz</option>
+              <option value="Bilinmiyor" data-i18n="optUnknown">Bilinmiyor</option>
             </select></div>
-          <div class="f2"><label>KİLO (kg)</label><input id="f-kilo" type="number" placeholder="70"></div>
-          <div class="f2"><label>BOY (cm)</label><input id="f-boy" type="number" placeholder="170"></div>
+          <div class="f2"><label data-i18n="lblWeight">KİLO (kg)</label><input id="f-kilo" type="number" data-i18n-ph="phWeight" placeholder="70"></div>
+          <div class="f2"><label data-i18n="lblHeight">BOY (cm)</label><input id="f-boy" type="number" data-i18n-ph="phHeight" placeholder="170"></div>
         </div>
       </div>
 
-      <div class="sttl">📝 NOTLAR & DNA</div>
+      <div class="sttl" data-i18n="stBloodDistinctive">🩸 KAN GRUBU & AYIRT EDİCİ İZ</div>
       <div class="gc">
         <div class="fr">
-          <label>NOTLAR</label>
-          <textarea id="f-notlar" maxlength="100" placeholder="RFID Notu / Ek gözlemler…"></textarea>
+          <label data-i18n="lblBloodType">KAN GRUBU</label>
+          <select id="f-kan">
+            <option value="" data-i18n="optSelect">— Seçin —</option>
+            <option value="A Rh+" data-i18n="optBloodApos">A Rh+</option>
+            <option value="A Rh-" data-i18n="optBloodAneg">A Rh-</option>
+            <option value="B Rh+" data-i18n="optBloodBpos">B Rh+</option>
+            <option value="B Rh-" data-i18n="optBloodBneg">B Rh-</option>
+            <option value="AB Rh+" data-i18n="optBloodABpos">AB Rh+</option>
+            <option value="AB Rh-" data-i18n="optBloodABneg">AB Rh-</option>
+            <option value="0 Rh+" data-i18n="optBloodOpos">0 Rh+</option>
+            <option value="0 Rh-" data-i18n="optBloodOneg">0 Rh-</option>
+            <option value="Bilinmiyor" data-i18n="optUnknown">Bilinmiyor</option>
+          </select>
+        </div>
+        <div class="fr">
+          <label data-i18n="lblDistinctiveMark">AYIRT EDİCİ İZ</label>
+          <select id="f-ayirt-durum" onchange="updateMarkVisibility()">
+            <option value="Yok" data-i18n="optNo">Yok</option>
+            <option value="Var" data-i18n="optYes">Var</option>
+            <option value="Bilinmiyor" data-i18n="optUnknown">Bilinmiyor</option>
+          </select>
+        </div>
+        <div class="fr dep-row" id="mark-detail-row">
+          <label data-i18n="lblDescription">AÇIKLAMA</label>
+          <textarea id="f-ayirt-detay" maxlength="120" data-i18n-ph="phDistinctive" placeholder="Açıklayınız..." disabled></textarea>
+        </div>
+      </div>
+
+      <div class="sttl" data-i18n="stNotesDna">📝 NOTLAR & DNA</div>
+      <div class="gc">
+        <div class="fr">
+          <label data-i18n="lblNotes">NOTLAR</label>
+          <textarea id="f-notlar" maxlength="100" data-i18n-ph="phNotes" placeholder="RFID Notu / Ek gözlemler…"></textarea>
         </div>
         <div style="text-align:right;font-size:9px;color:var(--muted);margin-top:-4px" id="char-cnt">0/100</div>
         <div class="fr" style="margin-top:8px">
-          <label>DNA</label>
+          <label data-i18n="lblDNA">DNA</label>
           <select id="f-dna">
-            <option>Alınmadı</option><option>Alındı</option><option>Analiz Bekliyor</option>
+            <option value="Alınmadı" data-i18n="optDnaNotTaken">Alınmadı</option>
+            <option value="Alındı" data-i18n="optDnaTaken">Alındı</option>
+            <option value="Analiz Bekliyor" data-i18n="optDnaPending">Analiz Bekliyor</option>
           </select>
         </div>
         <div class="fr" style="margin-top:6px">
-          <label>TRANSFER</label>
+          <label data-i18n="lblTransfer">TRANSFER</label>
           <select id="f-transfer">
-            <option>Sahada</option><option>Yolda</option><option>Hastanede</option><option>Teslim</option>
+            <option value="Sahada" data-i18n="optTransferField">Sahada</option>
+            <option value="Yolda" data-i18n="optTransferOnRoute">Yolda</option>
+            <option value="Hastanede" data-i18n="optTransferHospital">Hastanede</option>
+            <option value="Teslim" data-i18n="optTransferDelivered">Teslim</option>
           </select>
         </div>
       </div>
@@ -1144,29 +1349,13 @@ code{font-family:monospace;color:var(--accent);font-size:10px}
   <div class="panel" id="right">
     <div class="p-scroll">
 
-      <div class="sttl">📍 GPS / KONUM</div>
+      <div class="sttl" data-i18n="stGpsLocation">📍 GPS / KONUM</div>
 
       <!-- Şehir arama -->
       <div class="fr" style="margin-bottom:7px">
-        <input class="inp" id="loc-q" type="text" placeholder="Şehir veya ilçe ara…"
+        <input class="inp" id="loc-q" type="text" data-i18n-ph="phSearchCity" placeholder="Şehir veya ilçe ara…"
           style="flex:1" onkeydown="if(event.key==='Enter')searchLoc()">
-        <button class="btn b-acc b-sm" onclick="searchLoc()">🔍 ARA</button>
-      </div>
-
-      <div class="gc" id="off-map-box" style="padding:8px 10px">
-        <div style="font-size:10px;font-weight:800;letter-spacing:.9px;color:var(--accent);margin-bottom:6px">🗺️ OFFLINE HARİTA PAKETİ</div>
-        <div class="off-row">
-          <span style="font-size:10px;color:var(--muted)">Min</span>
-          <select id="off-min"><option>4</option><option>5</option><option>6</option></select>
-          <span style="font-size:10px;color:var(--muted)">Max</span>
-          <select id="off-max"><option>8</option><option selected>10</option><option>11</option><option>12</option><option>13</option></select>
-          <label style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px">
-            <input type="checkbox" id="off-sat" checked> Uydu
-          </label>
-          <button class="btn b-acc b-sm" id="off-start-btn" onclick="startMapPrefetch()">⬇️ İndir</button>
-          <button class="btn b-ghost b-sm" onclick="refreshMapPrefetch()">↻</button>
-        </div>
-        <div id="off-map-status">Hazır</div>
+        <button class="btn b-acc b-sm" onclick="searchLoc()" data-i18n="btnSearch">🔍 ARA</button>
       </div>
 
       <!-- Harita / Küre -->
@@ -1179,14 +1368,14 @@ code{font-family:monospace;color:var(--accent);font-size:10px}
           <button class="m-btn" onclick="refreshGPS()">📍 AL</button>
           <button class="m-btn" onclick="simGPS()">🎯 SİMÜLE</button>
           <div class="map-search-inline">
-            <input id="map-ov-q" placeholder="Konum ara…" onkeydown="if(event.key==='Enter')searchLocInline()">
+            <input id="map-ov-q" data-i18n-ph="phSearchLocation" placeholder="Konum ara…" onkeydown="if(event.key==='Enter')searchLocInline()">
             <button class="m-btn" style="padding:2px 6px" onclick="searchLocInline()">🔍</button>
           </div>
         </div>
         <!-- Dönen küre (GPS bulunmadan önce) -->
         <div id="globe-wrap">
           <canvas id="globe-canvas" width="350" height="350"></canvas>
-          <div id="globe-status" class="scanning">🛰️ GPS ARANIYIOR…</div>
+          <div id="globe-status" class="scanning" data-i18n="gpsSearching">🛰️ GPS ARANIYIOR…</div>
         </div>
         <!-- Leaflet haritası (GPS bulununca açılır) -->
         <div id="map" style="display:none;height:280px"></div>
@@ -1203,12 +1392,12 @@ code{font-family:monospace;color:var(--accent);font-size:10px}
       <!-- Kamera -->
       <div id="cam-wrap">
         <div id="cam-hdr">
-          <span>📷 CANLI TAKTİK GÖRÜNTÜ</span>
+          <span data-i18n="camLive">📷 CANLI TAKTİK GÖRÜNTÜ</span>
           <span id="face-cnt" style="color:var(--ok);font-size:9px"></span>
         </div>
         <div id="cam-body">
           <div id="cam-feed">
-            <span id="cam-ph" style="z-index:1">Kamera kapalı</span>
+            <span id="cam-ph" style="z-index:1" data-i18n="camClosed">Kamera kapalı</span>
             <video id="cam-vid" autoplay muted playsinline></video>
             <canvas id="face-detect-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:3"></canvas>
           </div>
@@ -1218,9 +1407,9 @@ code{font-family:monospace;color:var(--accent);font-size:10px}
           </div>
         </div>
         <div id="cam-ftr">
-          <button class="btn b-acc b-sm" onclick="startCam()">▶ Aç</button>
-          <button class="btn b-ghost b-sm" onclick="stopCam()">■ Kapat</button>
-          <button class="btn b-ok b-sm" onclick="capturePhoto()">📸 Foto</button>
+          <button class="btn b-acc b-sm" onclick="startCam()" data-i18n="btnOpen">▶ Aç</button>
+          <button class="btn b-ghost b-sm" onclick="stopCam()" data-i18n="btnClose">■ Kapat</button>
+          <button class="btn b-ok b-sm" onclick="capturePhoto()" data-i18n="btnPhoto">📸 Foto</button>
         </div>
       </div>
       <input type="hidden" id="f-foto">
@@ -1248,27 +1437,117 @@ code{font-family:monospace;color:var(--accent);font-size:10px}
       <!-- ID Kutusu -->
       <div id="id-wrap">
         <div>
-          <div id="id-lbl">KAYIT NO</div>
+          <div id="id-lbl" data-i18n="lblRecordNo">KAYIT NO</div>
           <div id="id-val">—</div>
         </div>
-        <button class="btn b-out b-sm" onclick="genID()">🔄 Yeni</button>
+        <button class="btn b-out b-sm" onclick="genID()" data-i18n="btnNew">🔄 Yeni</button>
       </div>
 
-      <!-- Ana Butonlar -->
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <button class="btn b-ok b-full b-big" onclick="saveRecord()">
-          💾 KİMLİKLENDİR &amp; KAYDET
-        </button>
-        <button class="btn b-acc b-full b-mid" onclick="readRFID()">
-          📡 KİMLİK OKU (RFID)
-        </button>
-        <button class="btn b-ghost b-full b-mid" onclick="clearForm()">🗑️ FORMU TEMİZLE</button>
-        <button id="ap-fab" onclick="toggleAutopilot()">🎙️ OTOPİLOT MODU</button>
+      <div class="gc ops-card">
+        <div class="ops-card-head">
+          <div>
+            <div class="ops-eyebrow">AFAD SAHA KİMLİKLENDİRME HATTI</div>
+            <div class="ops-title">Kurumsal Operasyon Görünümü</div>
+            <div class="ops-subtitle">Normal saha ekranı, merkez paneliyle aynı veri omurgasına bağlı şekilde çalışır.</div>
+          </div>
+          <div class="ops-badges">
+            <span class="ops-badge">AFAD</span>
+            <span class="ops-badge warn">TÜBİTAK</span>
+          </div>
+        </div>
+        <div class="ops-brief-grid">
+          <div class="ops-brief-item">
+            <span>Operatör</span>
+            <strong id="ops-user-brief">Yetkilendirme bekleniyor</strong>
+          </div>
+          <div class="ops-brief-item">
+            <span>Konum araması</span>
+            <strong id="ops-loc-brief">Şehir / ilçe bekleniyor</strong>
+          </div>
+          <div class="ops-brief-item">
+            <span>Triyaj</span>
+            <strong id="ops-triage-brief">Seçilmedi</strong>
+          </div>
+          <div class="ops-brief-item">
+            <span>Saha modu</span>
+            <strong id="ops-mode-brief">Canlı saha</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="gc ops-card">
+        <div class="ops-card-head">
+          <div>
+            <div class="ops-eyebrow">Birincil İşlemler</div>
+            <div class="ops-title">Kimliklendirme Kontrol Masası</div>
+            <div class="ops-subtitle">Kayıt alma, RFID okuma ve veri yönetimi geçişleri bu bloktan yönetilir.</div>
+          </div>
+        </div>
+        <div class="ops-action-grid">
+          <button class="btn b-ok b-big" onclick="saveRecord()">
+            <span data-i18n="save">💾 KİMLİKLENDİR &amp; KAYDET</span>
+          </button>
+          <button class="btn b-acc b-mid" onclick="readRFID()">
+            <span data-i18n="btnReadIdentity">📡 KİMLİK OKU (RFID)</span>
+          </button>
+          <button class="btn b-ghost b-mid" onclick="clearForm()" data-i18n="btnClearForm">🗑️ FORMU TEMİZLE</button>
+          <button class="btn b-ghost b-mid" onclick="openPWModal()">🔐 VERİ YÖNETİMİ</button>
+        </div>
+        <div class="ops-note">AI afet analizi ve mesajlaşma modülü artık veri yönetimi panelinde, kontrollü operatör erişimiyle çalışır.</div>
+      </div>
+
+      <div class="gc ops-card" id="ap-ops-card">
+        <div class="ops-card-head">
+          <div>
+            <div class="ops-eyebrow">Sesli Operasyon</div>
+            <div class="ops-title">Otopilot Görev Masası</div>
+            <div class="ops-subtitle">Hızlı kimliklendirme için sesli saha akışını başlatın ve durumu buradan izleyin.</div>
+          </div>
+          <div id="ap-mini-state" class="ap-mini-chip ready">PASİF</div>
+        </div>
+        <div id="ap-mini-grid">
+          <div class="ap-mini-item">
+            <span>Beklenen adım</span>
+            <strong id="ap-mini-step">Otopilot başlatılmadı</strong>
+          </div>
+          <div class="ap-mini-item">
+            <span>Seçili triyaj</span>
+            <strong id="ap-mini-triage">Seçilmedi</strong>
+          </div>
+          <div class="ap-mini-item">
+            <span>Bu oturum</span>
+            <strong id="ap-mini-count">0 kayıt</strong>
+          </div>
+          <div class="ap-mini-item">
+            <span>Son ses girdisi</span>
+            <strong id="ap-mini-heard">Bekleniyor</strong>
+          </div>
+        </div>
+        <button id="ap-fab" onclick="toggleAutopilot()" data-i18n="apFab">🎙️ OTOPİLOT MODU</button>
+        <div class="ap-inline-actions">
+          <button class="btn b-ghost b-mid" onclick="openTraining()">🎓 Ses Eğitimi</button>
+          <button class="btn b-ghost b-mid" onclick="apNewRecord()">🔄 Oto Yeni Kayıt</button>
+        </div>
+        <div class="ap-mini-note" id="ap-mini-note">Sesli kayıt modülü hazır. Başlatıldığında ad soyad, ekip ve olay kodu sırasıyla istenir.</div>
       </div>
 
     </div>
   </div>
 
+</div>
+
+<!-- ═══════ AI MODAL ═══════ -->
+<div id="ai-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:20px;width:90%;max-width:600px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 0 20px rgba(139,92,246,0.3)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;border-bottom:1px solid var(--border);padding-bottom:10px">
+      <h2 style="margin:0;color:#a78bfa;font-size:18px">🧠 AFET DURUM ANALİZİ</h2>
+      <button class="btn b-ghost b-sm" onclick="document.getElementById('ai-modal').style.display='none'">✕ Kapat</button>
+    </div>
+    <div id="ai-modal-meta" style="font-size:11px;color:var(--muted);margin-bottom:10px"></div>
+    <div id="ai-modal-content" style="flex:1;overflow-y:auto;font-size:14px;line-height:1.6;color:var(--text);padding-right:10px">
+      <!-- AI Sonuçları buraya gelecek -->
+    </div>
+  </div>
 </div>
 
 <!-- ═══════ GİRİŞ MODAL ═══════ -->
@@ -1299,6 +1578,10 @@ code{font-family:monospace;color:var(--accent);font-size:10px}
     <div style="display:flex;align-items:center;gap:10px">
       <div class="logo-hex" style="width:30px;height:30px;font-size:14px">T</div>
       <h2>VERİ YÖNETİMİ — TAMGA-ADKS</h2>
+      <div class="brand-seals" style="margin-left:2px">
+        <img class="afad-seal" src="/static/brand/afad-logo.png" alt="AFAD">
+        <img class="tubitak-seal" src="/static/brand/tubitak-logo-white.png" alt="TÜBİTAK">
+      </div>
     </div>
     <div style="display:flex;gap:8px;align-items:center">
       <button class="btn b-acc b-sm" onclick="syncAll();loadDP()">📡 Senkronize</button>
@@ -1310,49 +1593,124 @@ code{font-family:monospace;color:var(--accent);font-size:10px}
     </div>
   </div>
   <div id="dp-body">
-    <!-- İstatistik kartları -->
-    <div id="dp-stats">
-      <div class="ds-card"><div class="ds-num" id="dp-tot" style="color:var(--accent)">0</div><div class="ds-lbl">Toplam</div></div>
-      <div class="ds-card"><div class="ds-num" id="dp-r" style="color:#ef4444">0</div><div class="ds-lbl">🔴 Kritik</div></div>
-      <div class="ds-card"><div class="ds-num" id="dp-y" style="color:#fbbf24">0</div><div class="ds-lbl">🟡 Sarı</div></div>
-      <div class="ds-card"><div class="ds-num" id="dp-g" style="color:#4ade80">0</div><div class="ds-lbl">🟢 Minör</div></div>
-      <div class="ds-card"><div class="ds-num" id="dp-b" style="color:#94a3b8">0</div><div class="ds-lbl">⚫ Ölmüş</div></div>
-    </div>
-    <!-- Arama -->
-    <div id="dp-search">
-      <input id="dp-q" type="text" placeholder="Kimlik no, ad soyad, GPS veya herhangi bir değer…" oninput="loadDP()">
-      <button id="dp-clear-btn" class="btn b-err b-sm" onclick="if(confirm('Tüm kayıtları sil?'))clearAll()">🗑️ Tümünü Sil</button>
-    </div>
-    <!-- Tablo -->
-    <div id="dp-tbl-wrap">
-      <table>
-        <thead><tr>
-          <th>KİMLİK NO</th><th>AD SOYAD</th><th>TRİYAJ</th><th>TRANSFER</th><th>GPS</th>
-          <th>PARMAK İZİ</th><th>TARİH/SAAT</th><th>İŞLEM</th>
-        </tr></thead>
-        <tbody id="dp-tbody"></tbody>
-      </table>
-    </div>
-    <!-- Şifre Değiştirme Paneli (sadece admin) -->
-    <div id="dp-changepw-panel" style="display:none;background:rgba(7,18,34,.9);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-top:8px">
-      <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:12px">🔑 ŞİFRE DEĞİŞTİR (Admin)</div>
-      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-        <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px">
-          <label style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.8px">MEVCUT ŞİFRE</label>
-          <input type="password" id="cp-current" placeholder="••••" style="padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;outline:none">
+    <div id="dp-content">
+      <div id="dp-main">
+        <div id="dp-stats">
+          <div class="ds-card"><div class="ds-num" id="dp-tot" style="color:var(--accent)">0</div><div class="ds-lbl">Toplam</div></div>
+          <div class="ds-card"><div class="ds-num" id="dp-r" style="color:#ef4444">0</div><div class="ds-lbl">🔴 Kritik</div></div>
+          <div class="ds-card"><div class="ds-num" id="dp-y" style="color:#fbbf24">0</div><div class="ds-lbl">🟡 Sarı</div></div>
+          <div class="ds-card"><div class="ds-num" id="dp-g" style="color:#4ade80">0</div><div class="ds-lbl">🟢 Minör</div></div>
+          <div class="ds-card"><div class="ds-num" id="dp-b" style="color:#94a3b8">0</div><div class="ds-lbl">⚫ Ölmüş</div></div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px">
-          <label style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.8px">YENİ ŞİFRE</label>
-          <input type="password" id="cp-new" placeholder="••••" style="padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;outline:none">
+        <div id="dp-search">
+          <input id="dp-q" type="text" placeholder="Kimlik no, ad soyad, GPS veya herhangi bir değer…" oninput="loadDP()">
+          <button id="dp-clear-btn" class="btn b-err b-sm" onclick="if(confirm('Tüm kayıtları sil?'))clearAll()">🗑️ Tümünü Sil</button>
         </div>
-        <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px">
-          <label style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.8px">YENİ ŞİFRE (TEKRAR)</label>
-          <input type="password" id="cp-confirm" placeholder="••••" style="padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;outline:none">
+        <div id="dp-tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>KİMLİK NO</th><th>AD SOYAD</th><th>TRİYAJ</th><th>TRANSFER</th><th>KAN GRUBU</th>
+              <th>AYIRT EDİCİ İZ</th><th>GPS</th><th>PARMAK İZİ</th><th>TARİH/SAAT</th><th>İŞLEM</th>
+            </tr></thead>
+            <tbody id="dp-tbody"></tbody>
+          </table>
         </div>
-        <button class="btn b-ok b-sm" onclick="doChangePw()" style="padding:8px 16px;margin-bottom:0">Kaydet</button>
-        <button class="btn b-ghost b-sm" onclick="closeChangePwPanel()" style="padding:8px 12px;margin-bottom:0">İptal</button>
+        <div id="dp-changepw-panel" style="display:none;background:rgba(7,18,34,.9);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-top:8px">
+          <div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;margin-bottom:12px">🔑 ŞİFRE DEĞİŞTİR (Admin)</div>
+          <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px">
+              <label style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.8px">MEVCUT ŞİFRE</label>
+              <input type="password" id="cp-current" placeholder="••••" style="padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;outline:none">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px">
+              <label style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.8px">YENİ ŞİFRE</label>
+              <input type="password" id="cp-new" placeholder="••••" style="padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;outline:none">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:140px">
+              <label style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.8px">YENİ ŞİFRE (TEKRAR)</label>
+              <input type="password" id="cp-confirm" placeholder="••••" style="padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;outline:none">
+            </div>
+            <button class="btn b-ok b-sm" onclick="doChangePw()" style="padding:8px 16px;margin-bottom:0">Kaydet</button>
+            <button class="btn b-ghost b-sm" onclick="closeChangePwPanel()" style="padding:8px 12px;margin-bottom:0">İptal</button>
+          </div>
+          <div id="cp-err" style="font-size:10px;color:var(--err);margin-top:8px;min-height:14px"></div>
+        </div>
       </div>
-      <div id="cp-err" style="font-size:10px;color:var(--err);margin-top:8px;min-height:14px"></div>
+      <div id="dp-side">
+        <div class="gc ops-card">
+          <div class="ops-card-head">
+            <div>
+              <div class="ops-eyebrow">AFAD SAHA KİMLİKLENDİRME HATTI</div>
+              <div class="ops-title">Kurumsal Operasyon Görünümü</div>
+              <div class="ops-subtitle">Veri yönetimi ekranı da aynı saha omurgasıyla senkron, canlı operasyon özetini gösterir.</div>
+            </div>
+            <div class="ops-badges">
+              <span class="ops-badge">AFAD</span>
+              <span class="ops-badge warn">TÜBİTAK</span>
+            </div>
+          </div>
+          <div class="ops-brief-grid">
+            <div class="ops-brief-item">
+              <span>Operatör</span>
+              <strong id="dp-ops-user-brief">Yetkilendirme bekleniyor</strong>
+            </div>
+            <div class="ops-brief-item">
+              <span>Konum araması</span>
+              <strong id="dp-ops-loc-brief">Şehir / ilçe bekleniyor</strong>
+            </div>
+            <div class="ops-brief-item">
+              <span>Triyaj</span>
+              <strong id="dp-ops-triage-brief">Seçilmedi</strong>
+            </div>
+            <div class="ops-brief-item">
+              <span>Saha modu</span>
+              <strong id="dp-ops-mode-brief">Canlı saha</strong>
+            </div>
+          </div>
+        </div>
+        <div class="dp-tool-card" id="dp-ai-card">
+          <div class="dp-tool-head">
+            <div>
+              <strong>🤖 AFET DURUM ANALİZİ</strong>
+              <span>Merkezi AI ve offline tahmin motoru bu panelden kontrollü şekilde çalıştırılır.</span>
+            </div>
+          </div>
+          <div class="fr" style="margin-bottom:8px">
+            <label>AFET ÖLÇEĞİ</label>
+            <select id="f-afet-olcegi" class="combo">
+              <option value="Düşük">Düşük</option>
+              <option value="Orta">Orta</option>
+              <option value="Yüksek">Yüksek</option>
+              <option value="Çok Yüksek">Çok Yüksek</option>
+              <option value="Yıkıcı">Yıkıcı</option>
+            </select>
+          </div>
+          <button id="ai-query-btn" class="btn b-acc b-full b-mid" onclick="runAiQuery()" style="background:#8b5cf6;border-color:#7c3aed;color:#fff">
+            🧠 AI AFET ANALİZİ (Yapay Zeka)
+          </button>
+          <div class="dp-inline-note" id="dp-ai-status">Şehir / ilçe seçip analizi çalıştırın. Sonuç ayrıntısı modal pencerede açılır.</div>
+          <div class="dp-ai-preview" id="dp-ai-preview">Henüz analiz çalıştırılmadı.</div>
+          <div class="dp-tool-actions">
+            <button class="btn b-ghost b-sm" onclick="document.getElementById('ai-modal').style.display='flex'">Son Analizi Aç</button>
+          </div>
+        </div>
+        <div class="dp-tool-card" id="dp-msg-card">
+          <div class="dp-tool-head">
+            <div>
+              <strong>📨 MESAJ MERKEZİ</strong>
+              <span>Operatör mesajları ve yakın portalından gelen notlar bu akışta birleşir.</span>
+            </div>
+            <button class="btn b-ghost b-sm" style="padding:3px 8px" onclick="window.open('/messages','_blank')">Ayrı Ekran</button>
+          </div>
+          <div id="msg-feed"><div id="msg-empty">Henüz mesaj yok</div></div>
+          <input id="msg-person" placeholder="Kişi ID / Ad (opsiyonel)">
+          <input id="msg-text" placeholder="Mesaj yazın..." onkeydown="if(event.key==='Enter')sendLocalMessage()">
+          <div id="msg-controls">
+            <button class="btn b-acc b-sm b-full" onclick="sendLocalMessage()">📤 Gönder</button>
+            <button class="btn b-ghost b-sm" onclick="loadMessages()">↻</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -2217,12 +2575,14 @@ let _lastSavedRecord=null;
 let _currentPerms={view:true};
 let _dpRecIndex={};
 let _prefetchPollTimer=null;
+let _msgCache=[];
 const ROLE_PERMS={
-  admin:{view:true,delete:true,export:true,package:true,change_password:true,transfer_update:true,bulk_qr:true,prefetch_map:true},
-  doctor:{view:true,delete:false,export:true,package:true,change_password:false,transfer_update:true,bulk_qr:true,prefetch_map:true},
-  saha:{view:true,delete:false,export:false,package:false,change_password:false,transfer_update:true,bulk_qr:true,prefetch_map:false},
-  izleme:{view:true,delete:false,export:false,package:false,change_password:false,transfer_update:false,bulk_qr:false,prefetch_map:false},
-  viewer:{view:true,delete:false,export:false,package:false,change_password:false,transfer_update:false,bulk_qr:false,prefetch_map:false},
+  admin:{view:true,delete:true,export:true,package:true,change_password:true,transfer_update:true,bulk_qr:true,prefetch_map:true,afad_dashboard:true},
+  doctor:{view:true,delete:false,export:true,package:true,change_password:false,transfer_update:true,bulk_qr:true,prefetch_map:true,afad_dashboard:true},
+  saha:{view:true,delete:false,export:false,package:false,change_password:false,transfer_update:true,bulk_qr:true,prefetch_map:false,afad_dashboard:false},
+  izleme:{view:true,delete:false,export:false,package:false,change_password:false,transfer_update:false,bulk_qr:false,prefetch_map:false,afad_dashboard:true},
+  viewer:{view:true,delete:false,export:false,package:false,change_password:false,transfer_update:false,bulk_qr:false,prefetch_map:false,afad_dashboard:false},
+  afad:{view:true,delete:false,export:true,package:true,change_password:false,transfer_update:true,bulk_qr:false,prefetch_map:true,afad_dashboard:true},
 };
 function rolePerms(role){return Object.assign({},ROLE_PERMS[role]||ROLE_PERMS.viewer);}
 function canPerm(k){return !!_currentPerms[k];}
@@ -2231,8 +2591,9 @@ function escAttr(s){return String(s||'').replace(/[&<>"']/g,m=>({"&":"&amp;","<"
 // ─── Saat ────────────────────────────────────────
 function tick(){
   const n=new Date();
-  document.getElementById('clk').textContent=n.toLocaleTimeString('tr-TR');
-  document.getElementById('dt').textContent=n.toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric'});
+  const loc=window.LANG==='en'?'en-US':'tr-TR';
+  document.getElementById('clk').textContent=n.toLocaleTimeString(loc,{hour12:false});
+  document.getElementById('dt').textContent=n.toLocaleDateString(loc,{day:'2-digit',month:'long',year:'numeric'});
 }
 setInterval(tick,1000);tick();
 
@@ -2240,7 +2601,100 @@ setInterval(tick,1000);tick();
 const I18N={
   tr:{
     headerSub:'ACİL DURUM KİMLİKLENDİRME SİSTEMİ v2.0',
+    stEventCategory:'📁 OLAY KATEGORİSİ',
+    stBodyMap:'⚕️ VÜCUT HARİTASI',
+    btnClearMarks:'🗑️ İşaretleri Temizle',
+    stTeethMap:'🦷 DİŞ HARİTASI',
+    btnClearTeeth:'🗑️ Dişleri Temizle',
+    stGpsLocation:'📍 GPS / KONUM',
+    phSearchCity:'Şehir veya ilçe ara…',
+    btnSearch:'🔍 ARA',
+    lblOfflineMap:'🗺️ OFFLINE HARİTA PAKETİ',
+    lblSatellite:'Uydu',
+    btnDownload:'⬇️ İndir',
+    statusReady:'Hazır',
+    phSearchLocation:'Konum ara…',
+    gpsSearching:'🛰️ GPS ARANIYOR…',
+    camLive:'📷 CANLI TAKTİK GÖRÜNTÜ',
+    camClosed:'Kamera kapalı',
+    btnOpen:'▶ Aç',
+    btnClose:'■ Kapat',
+    btnPhoto:'📸 Foto',
+    lblRecordNo:'KAYIT NO',
+    btnNew:'🔄 Yeni',
+    syncLive:'SENKRON: CANLI',
+    syncSending:'SENKRON: GÖNDERİLİYOR',
+    syncQueue:'KUYRUK',
+    syncWaiting:'BEKLİYOR',
+    syncOffline:'OFFLINE: KUYRUK',
+    btnDataManagement:'🔐 VERİ YÖNETİMİ',
     save:'💾 KİMLİKLENDİR & KAYDET',
+    btnReadIdentity:'📡 KİMLİK OKU (RFID)',
+    btnClearForm:'🗑️ FORMU TEMİZLE',
+    stIdentityDetails:'📋 KİMLİK DETAYLARI',
+    lblNameSurname:'AD SOYAD',
+    phUnknown:'Bilinmiyor',
+    stProtocolDetail:'📋 PROTOKOL & DETAY',
+    lblIncidentCode:'OLAY KODU',
+    phIncidentCode:'DP01',
+    lblTeam:'EKİP',
+    phTeam:'Ekip A',
+    lblConsciousness:'BİLİNÇ',
+    optConsciousOpen:'Açık',
+    optConsciousClosed:'Kapalı',
+    lblTriage:'TRİYAJ',
+    optSelect:'— Seçin —',
+    optTriageGreen:'YEŞİL (Hafif)',
+    optTriageYellow:'SARI (Gecikmeli)',
+    optTriageRed:'KIRMIZI (Acil)',
+    optTriageBlack:'SİYAH (Ölü)',
+    stPhysicalFeatures:'🧬 FİZİKSEL ÖZELLİKLER',
+    lblEyeColor:'GÖZ RENGİ',
+    optEyeBrown:'Kahverengi',
+    optEyeBlue:'Mavi',
+    optEyeGreen:'Yeşil',
+    optEyeBlack:'Siyah',
+    optEyeHazel:'Ela',
+    optEyeGray:'Gri',
+    lblHairColor:'SAÇ RENGİ',
+    optHairBlack:'Siyah',
+    optHairBrown:'Kahverengi',
+    optHairBlond:'Sarı',
+    optHairRed:'Kızıl',
+    optHairGray:'Gri',
+    optHairWhite:'Beyaz',
+    lblWeight:'KİLO (kg)',
+    phWeight:'70',
+    lblHeight:'BOY (cm)',
+    phHeight:'170',
+    stBloodDistinctive:'🩸 KAN GRUBU & AYIRT EDİCİ İZ',
+    lblBloodType:'KAN GRUBU',
+    optBloodApos:'A Rh+',
+    optBloodAneg:'A Rh-',
+    optBloodBpos:'B Rh+',
+    optBloodBneg:'B Rh-',
+    optBloodABpos:'AB Rh+',
+    optBloodABneg:'AB Rh-',
+    optBloodOpos:'0 Rh+',
+    optBloodOneg:'0 Rh-',
+    lblDistinctiveMark:'AYIRT EDİCİ İZ',
+    optNo:'Yok',
+    optYes:'Var',
+    optUnknown:'Bilinmiyor',
+    lblDescription:'AÇIKLAMA',
+    phDistinctive:'Açıklayınız...',
+    stNotesDna:'📝 NOTLAR & DNA',
+    lblNotes:'NOTLAR',
+    phNotes:'RFID Notu / Ek gözlemler…',
+    lblDNA:'DNA',
+    optDnaNotTaken:'Alınmadı',
+    optDnaTaken:'Alındı',
+    optDnaPending:'Analiz Bekliyor',
+    lblTransfer:'TRANSFER',
+    optTransferField:'Sahada',
+    optTransferOnRoute:'Yolda',
+    optTransferHospital:'Hastanede',
+    optTransferDelivered:'Teslim',
     newRec:'📋 YENİ KAYIT AL',endRec:'✅ KAYDI BİTİR',
     exitAuto:'❌ Otopilottan Çık',
     apTitle:'🎙️ OTOPİLOT MODU',apFab:'🎙️ OTOPİLOT',
@@ -2250,6 +2704,13 @@ const I18N={
     byeAuto:'Otopilot kapatıldı.',
     newRecOk:'Yeni kayıt hazır.',
     savedOk:'Kayıt tamamlandı ve kaydedildi.',
+    queuedOffline:'İnternet yok: kayıt offline kuyruğa alındı',
+    queuedNoServer:'Sunucuya erişilemedi: kayıt kuyruğa alındı',
+    syncNow:'Senkronize ediliyor…',
+    syncErr:'Senkron hatası',
+    syncDone:'Senkronize',
+    openCamFirst:'Önce kamerayı açın',
+    conflictWarn:'Çakışma uyarısı',
     photoOk:'Fotoğraf çekildi.',
     camOpen:'Kamera açıldı.',
     recognized:'Komut algılandı',
@@ -2267,7 +2728,100 @@ const I18N={
   },
   en:{
     headerSub:'EMERGENCY IDENTIFICATION SYSTEM v2.0',
+    stEventCategory:'📁 EVENT CATEGORY',
+    stBodyMap:'⚕️ BODY MAP',
+    btnClearMarks:'🗑️ Clear Marks',
+    stTeethMap:'🦷 DENTAL MAP',
+    btnClearTeeth:'🗑️ Clear Teeth',
+    stGpsLocation:'📍 GPS / LOCATION',
+    phSearchCity:'Search city or district…',
+    btnSearch:'🔍 SEARCH',
+    lblOfflineMap:'🗺️ OFFLINE MAP PACKAGE',
+    lblSatellite:'Satellite',
+    btnDownload:'⬇️ Download',
+    statusReady:'Ready',
+    phSearchLocation:'Search location…',
+    gpsSearching:'🛰️ SEARCHING GPS…',
+    camLive:'📷 LIVE TACTICAL FEED',
+    camClosed:'Camera is off',
+    btnOpen:'▶ Open',
+    btnClose:'■ Close',
+    btnPhoto:'📸 Photo',
+    lblRecordNo:'RECORD NO',
+    btnNew:'🔄 New',
+    syncLive:'SYNC: LIVE',
+    syncSending:'SYNC: SENDING',
+    syncQueue:'QUEUE',
+    syncWaiting:'PENDING',
+    syncOffline:'OFFLINE: QUEUE',
+    btnDataManagement:'🔐 DATA MANAGEMENT',
     save:'💾 IDENTIFY & SAVE',
+    btnReadIdentity:'📡 READ IDENTITY (RFID)',
+    btnClearForm:'🗑️ CLEAR FORM',
+    stIdentityDetails:'📋 IDENTITY DETAILS',
+    lblNameSurname:'FULL NAME',
+    phUnknown:'Unknown',
+    stProtocolDetail:'📋 PROTOCOL & DETAILS',
+    lblIncidentCode:'INCIDENT CODE',
+    phIncidentCode:'DP01',
+    lblTeam:'TEAM',
+    phTeam:'Team A',
+    lblConsciousness:'CONSCIOUSNESS',
+    optConsciousOpen:'Open',
+    optConsciousClosed:'Closed',
+    lblTriage:'TRIAGE',
+    optSelect:'— Select —',
+    optTriageGreen:'GREEN (Minor)',
+    optTriageYellow:'YELLOW (Delayed)',
+    optTriageRed:'RED (Urgent)',
+    optTriageBlack:'BLACK (Deceased)',
+    stPhysicalFeatures:'🧬 PHYSICAL FEATURES',
+    lblEyeColor:'EYE COLOR',
+    optEyeBrown:'Brown',
+    optEyeBlue:'Blue',
+    optEyeGreen:'Green',
+    optEyeBlack:'Black',
+    optEyeHazel:'Hazel',
+    optEyeGray:'Gray',
+    lblHairColor:'HAIR COLOR',
+    optHairBlack:'Black',
+    optHairBrown:'Brown',
+    optHairBlond:'Blond',
+    optHairRed:'Red',
+    optHairGray:'Gray',
+    optHairWhite:'White',
+    lblWeight:'WEIGHT (kg)',
+    phWeight:'70',
+    lblHeight:'HEIGHT (cm)',
+    phHeight:'170',
+    stBloodDistinctive:'🩸 BLOOD TYPE & DISTINCTIVE MARK',
+    lblBloodType:'BLOOD TYPE',
+    optBloodApos:'A Rh+',
+    optBloodAneg:'A Rh-',
+    optBloodBpos:'B Rh+',
+    optBloodBneg:'B Rh-',
+    optBloodABpos:'AB Rh+',
+    optBloodABneg:'AB Rh-',
+    optBloodOpos:'O Rh+',
+    optBloodOneg:'O Rh-',
+    lblDistinctiveMark:'DISTINCTIVE MARK',
+    optNo:'No',
+    optYes:'Yes',
+    optUnknown:'Unknown',
+    lblDescription:'DESCRIPTION',
+    phDistinctive:'Please describe...',
+    stNotesDna:'📝 NOTES & DNA',
+    lblNotes:'NOTES',
+    phNotes:'RFID note / extra observations…',
+    lblDNA:'DNA',
+    optDnaNotTaken:'Not Taken',
+    optDnaTaken:'Taken',
+    optDnaPending:'Analysis Pending',
+    lblTransfer:'TRANSFER',
+    optTransferField:'On Field',
+    optTransferOnRoute:'On Route',
+    optTransferHospital:'At Hospital',
+    optTransferDelivered:'Delivered',
     newRec:'📋 NEW RECORD',endRec:'✅ END RECORD',
     exitAuto:'❌ Exit Autopilot',
     apTitle:'🎙️ AUTOPILOT MODE',apFab:'🎙️ AUTOPILOT',
@@ -2277,6 +2831,13 @@ const I18N={
     byeAuto:'Autopilot closed.',
     newRecOk:'New record ready.',
     savedOk:'Record completed and saved.',
+    queuedOffline:'No internet: record queued offline',
+    queuedNoServer:'Server unreachable: record queued',
+    syncNow:'Synchronizing…',
+    syncErr:'Synchronization error',
+    syncDone:'Synchronized',
+    openCamFirst:'Open the camera first',
+    conflictWarn:'Conflict warning',
     photoOk:'Photo captured.',
     camOpen:'Camera opened.',
     recognized:'Command recognized',
@@ -2294,6 +2855,67 @@ const I18N={
   }
 };
 function T(k){return (I18N[window.LANG]||I18N.tr)[k]||k}
+
+function updateOpsSummary(){
+  const setText=(ids,value)=>{
+    ids.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el)el.textContent=value;
+    });
+  };
+  setText(['ops-user-brief','dp-ops-user-brief'],_currentUser||'Yetkilendirme bekleniyor');
+  setText(['ops-loc-brief','dp-ops-loc-brief'],(document.getElementById('loc-q')?.value||'').trim()||'Şehir / ilçe bekleniyor');
+  setText(['ops-triage-brief','dp-ops-triage-brief'],document.getElementById('f-triyaj-sel')?.value||document.getElementById('f-triyaj')?.value||'Seçilmedi');
+  setText(['ops-mode-brief','dp-ops-mode-brief'],navigator.onLine?'Canlı saha':'Offline saha');
+}
+
+function summarizeAiResult(htmlOrText){
+  if(!htmlOrText)return '';
+  const tmp=document.createElement('div');
+  tmp.innerHTML=htmlOrText;
+  return (tmp.textContent||tmp.innerText||'').replace(/\s+/g,' ').trim();
+}
+
+function setAiPanelStatus(text,preview=''){
+  const statusEl=document.getElementById('dp-ai-status');
+  const previewEl=document.getElementById('dp-ai-preview');
+  if(statusEl)statusEl.textContent=text||'';
+  if(previewEl&&preview)previewEl.textContent=preview;
+}
+
+function getApStepLabel(){
+  if(!apActive)return window.LANG==='en'?'Autopilot not started':'Otopilot başlatılmadı';
+  const labels=window.LANG==='en'
+    ?['Waiting for full name','Waiting for team code','Waiting for incident code','Waiting for verbal confirmation']
+    :['Ad soyad bekleniyor','Ekip kodu bekleniyor','Olay kodu bekleniyor','Sözlü onay bekleniyor'];
+  return labels[Math.min(apGuideStep,labels.length-1)];
+}
+
+function renderAutopilotMini(){
+  const stateEl=document.getElementById('ap-mini-state');
+  const stepEl=document.getElementById('ap-mini-step');
+  const triageEl=document.getElementById('ap-mini-triage');
+  const countEl=document.getElementById('ap-mini-count');
+  const heardEl=document.getElementById('ap-mini-heard');
+  const noteEl=document.getElementById('ap-mini-note');
+  if(stateEl){
+    stateEl.className='ap-mini-chip ready';
+    if(!apActive)stateEl.textContent=window.LANG==='en'?'PASSIVE':'PASİF';
+    else if(apSaving){stateEl.textContent=window.LANG==='en'?'SAVING':'KAYDEDİLİYOR';stateEl.className='ap-mini-chip confirm';}
+    else if(apGuideStep===3){stateEl.textContent=window.LANG==='en'?'CONFIRM':'ONAY';stateEl.className='ap-mini-chip confirm';}
+    else if((document.getElementById('autopilot-overlay')?.getAttribute('data-state')||'')==='filled'){stateEl.textContent=window.LANG==='en'?'CAPTURED':'ALINDI';stateEl.className='ap-mini-chip saved';}
+    else if(apActive){stateEl.textContent=window.LANG==='en'?'LISTENING':'DİNLİYOR';stateEl.className='ap-mini-chip live';}
+  }
+  if(stepEl)stepEl.textContent=getApStepLabel();
+  if(triageEl)triageEl.textContent=document.getElementById('f-triyaj-sel')?.value||document.getElementById('f-triyaj')?.value||'Seçilmedi';
+  if(countEl)countEl.textContent=`${apSessionCount} kayıt`;
+  if(heardEl)heardEl.textContent=apLastHeard||'Bekleniyor';
+  if(noteEl){
+    if(!apActive)noteEl.textContent='Sesli kayıt modülü hazır. Başlatıldığında ad soyad, ekip ve olay kodu sırasıyla istenir.';
+    else if(apSaving)noteEl.textContent='Kayıt güvenli biçimde sisteme aktarılıyor.';
+    else noteEl.textContent=apLastOutcome||'Ses komutlarını veya hızlı butonları kullanarak alanları tamamlayın.';
+  }
+}
 
 // ─── TTS — Kadın Sesi ────────────────────────────
 let _femaleVoice=null;
@@ -2348,12 +2970,19 @@ function applyI18N(){
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     const k=el.getAttribute('data-i18n');if(t[k])el.textContent=t[k];
   });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    const k=el.getAttribute('data-i18n-ph');if(t[k])el.placeholder=t[k];
+  });
   // ap-fab
   const fab=document.getElementById('ap-fab');if(fab)fab.textContent=t.apFab;
   // ap overlay title
   const aph=document.getElementById('ap-hdr-title');if(aph)aph.textContent=t.apTitle;
+  tick();
+  updateSyncPill();
   // Build command list
   buildApCmdList();
+  updateOpsSummary();
+  renderAutopilotMini();
 }
 // Legacy compat
 function setLang(l){chooseLang(l);}
@@ -2367,6 +2996,9 @@ let lastTranscript='';
 let lastCmdTime=0;
 let apGuideStep=0;   // 0=isim, 1=ekip, 2=olay, 3=onay bekleniyor
 let apSessionCount=0;
+let apSaving=false;
+let apLastHeard='';
+let apLastOutcome='';
 // Ses görselleştiricisi
 let vizAnimId=null,vizAnalyser=null,vizCtx2d=null,vizStream=null;
 
@@ -2384,6 +3016,8 @@ function apSetTriage(v){
   const sel=document.getElementById('f-triyaj-sel');
   if(sel)sel.value=v;
   syncTr(v);
+  apLastOutcome='Triyaj hızlı seçim ile güncellendi.';
+  renderAutopilotMini();
   toast('Triyaj: '+v,'ok');
 }
 
@@ -2391,7 +3025,10 @@ function toggleAutopilot(){apActive?exitAutopilot():enterAutopilot();}
 
 function enterAutopilot(){
   apActive=true;
+  apSaving=false;
   apGuideStep=0;
+  apLastHeard='';
+  apLastOutcome='Sesli kayıt akışı başlatıldı.';
   const ov=document.getElementById('autopilot-overlay');
   if(ov){ov.classList.add('open');ov.classList.remove('minimized');}
   document.getElementById('ap-fab').classList.add('active');
@@ -2401,6 +3038,7 @@ function enterAutopilot(){
   apHudSet('cam','KAPALI','err');
   setApState('listening');
   buildApCmdList();
+  renderAutopilotMini();
   setTimeout(()=>{
     speak(T('greetAuto'));
     startRecognition();apInitGlobe();apStartCam();initViz();
@@ -2410,6 +3048,7 @@ function enterAutopilot(){
 
 function exitAutopilot(){
   apActive=false;
+  apSaving=false;
   const ov=document.getElementById('autopilot-overlay');
   if(ov){ov.classList.remove('open');ov.classList.remove('minimized');}
   document.getElementById('ap-fab').classList.remove('active');
@@ -2423,6 +3062,8 @@ function exitAutopilot(){
   apHudSet('mic','KAPALI','err');
   apHudSet('gps','PASIF','err');
   apHudSet('cam','KAPALI','err');
+  apLastOutcome='Otopilot kapatıldı.';
+  renderAutopilotMini();
   speak(T('byeAuto'));
 }
 
@@ -2439,6 +3080,7 @@ function apAskStep(){
   ['gs-isim','gs-ekip','gs-olay'].forEach((id,i)=>{
     document.getElementById(id)?.classList.toggle('active',i===apGuideStep);
   });
+  renderAutopilotMini();
 }
 
 function _apFillField(field,rawVal){
@@ -2448,8 +3090,10 @@ function _apFillField(field,rawVal){
     :v.toUpperCase();
   const el=document.getElementById('ap-'+field);
   if(el){el.value=display;el.classList.add('filled');}
+  apLastOutcome=`${field.toUpperCase()} alanı alındı.`;
   speak(display);
   setApState('filled');
+  renderAutopilotMini();
   const stepIdx=['isim','ekip','olay'].indexOf(field);
   if(stepIdx>=0){
     apGuideStep=stepIdx+1;
@@ -2461,34 +3105,51 @@ function _apFillField(field,rawVal){
   }
 }
 
-function apConfirm(){
-  const isim=document.getElementById('ap-isim')?.value||'';
-  const ekip=document.getElementById('ap-ekip')?.value||'';
-  const olay=document.getElementById('ap-olay')?.value||'';
-  if(isim){const f=document.getElementById('f-adsoyad');if(f)f.value=isim;}
-  if(ekip){const f=document.getElementById('f-ekip');if(f)f.value=ekip;}
-  if(olay){const f=document.getElementById('f-olay');if(f)f.value=olay;}
-  saveRecord(false);
-  speak(T('savedOk'));
-  apSessionCount++;
-  const sc=document.getElementById('ap-session-count');
-  if(sc)sc.textContent=apSessionCount;
-  setTimeout(()=>{
-    ['ap-isim','ap-ekip','ap-olay'].forEach(id=>{
-      const el=document.getElementById(id);if(el){el.value='';el.classList.remove('filled');}
-    });
-    apGuideStep=0;
-    apAskStep();
-  },1200);
-}
-
-function apNewRecord(){
-  clearForm();
+function resetAutopilotDraft(){
   ['ap-isim','ap-ekip','ap-olay'].forEach(id=>{
     const el=document.getElementById(id);if(el){el.value='';el.classList.remove('filled');}
   });
   apGuideStep=0;
+  apLastHeard='';
+}
+
+async function apConfirm(){
+  if(apSaving)return;
+  const isim=document.getElementById('ap-isim')?.value||'';
+  const ekip=document.getElementById('ap-ekip')?.value||'';
+  const olay=document.getElementById('ap-olay')?.value||'';
+  if(!isim&&!ekip&&!olay&&!(document.getElementById('f-adsoyad')?.value||'').trim()){
+    toast('Kaydedilecek ses girdisi yok','error');
+    apLastOutcome='Kaydetme reddedildi: veri yok.';
+    renderAutopilotMini();
+    return;
+  }
+  if(isim){const f=document.getElementById('f-adsoyad');if(f)f.value=isim;}
+  if(ekip){const f=document.getElementById('f-ekip');if(f)f.value=ekip;}
+  if(olay){const f=document.getElementById('f-olay');if(f)f.value=olay;}
+  apSaving=true;
+  apLastOutcome='Kayıt güvenli biçimde işleniyor.';
+  renderAutopilotMini();
+  const result=await saveRecord(false);
+  apSaving=false;
+  speak(result?.queued?T('queuedOffline'):T('savedOk'));
+  apSessionCount++;
+  const sc=document.getElementById('ap-session-count');
+  if(sc)sc.textContent=apSessionCount;
+  apLastOutcome=result?.queued?'Kayıt offline kuyruğa alındı.':'Kayıt başarıyla tamamlandı.';
+  clearForm();
+  resetAutopilotDraft();
+  renderAutopilotMini();
   setApState('listening');
+  setTimeout(()=>apAskStep(),700);
+}
+
+function apNewRecord(){
+  clearForm();
+  resetAutopilotDraft();
+  apLastOutcome='Yeni kayıt taslağı hazırlandı.';
+  setApState('listening');
+  renderAutopilotMini();
   toast(T('newRecOk'),'ok');
   speak(T('newRecOk'));
   apAskStep();
@@ -2729,6 +3390,7 @@ async function apMapSearch(){
 function setApState(state){
   const ov=document.getElementById('autopilot-overlay');
   if(ov)ov.setAttribute('data-state',state);
+  renderAutopilotMini();
 }
 
 // ─── SES TANIMA ──────────────────────────────────
@@ -2766,7 +3428,9 @@ function startRecognition(){
       else interim+=e.results[i][0].transcript;
     }
     const txt=(final||interim).toLowerCase().trim();
+    apLastHeard=txt||apLastHeard;
     const mid=document.getElementById('ap-hdr-mid');if(mid)mid.textContent=txt||'—';
+    renderAutopilotMini();
     if(final&&txt!==lastTranscript){lastTranscript=txt;parseCommand(txt);}
   };
   recognition.onerror=function(e){
@@ -2787,6 +3451,7 @@ function stopRecognition(){
   const badge=document.getElementById('ap-status-badge');
   if(badge){badge.textContent=T('apReady');badge.className='';}
   apHudSet('mic','HAZIR','warn');
+  renderAutopilotMini();
 }
 
 function normalizeVoiceText(text){
@@ -3130,7 +3795,22 @@ function updateSubcat(){
 }
 
 // ─── Triyaj ──────────────────────────────────────
-function syncTr(v){document.getElementById('f-triyaj').value=v;}
+function syncTr(v){
+  document.getElementById('f-triyaj').value=v;
+  updateOpsSummary();
+  renderAutopilotMini();
+}
+
+function updateMarkVisibility(){
+  const sel=document.getElementById('f-ayirt-durum');
+  const row=document.getElementById('mark-detail-row');
+  const tx=document.getElementById('f-ayirt-detay');
+  if(!sel||!row||!tx)return;
+  const show=sel.value==='Var';
+  row.classList.toggle('open',show);
+  tx.disabled=!show;
+  if(!show)tx.value='';
+}
 
 document.getElementById('f-notlar').addEventListener('input',function(){document.getElementById('char-cnt').textContent=this.value.length+'/100';});
 
@@ -3639,12 +4319,12 @@ function stopCam(){
 
 function capturePhoto(){
   const v=document.getElementById('cam-vid');
-  if(!camStream||!v.srcObject){toast('Önce kamerayı açın','error');return;}
+  if(!camStream||!v.srcObject){toast(T('openCamFirst'),'error');return;}
   const c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;
   c.getContext('2d').drawImage(v,0,0);
   document.getElementById('face-img').src=c.toDataURL('image/jpeg',.9);
   document.getElementById('f-foto').value='captured';
-  toast('Fotoğraf çekildi','ok');
+  toast(T('photoOk'),'ok');
   sysLog('Manuel fotoğraf çekildi','ok');
 }
 
@@ -3674,7 +4354,67 @@ async function beep(p='short'){
 }
 
 // ─── KAYDET ──────────────────────────────────────
+// AI Afet Analizi
+async function runAiQuery() {
+  const sehir = document.getElementById('loc-q').value;
+  const afetTuru = document.getElementById('f-subcat').value;
+  const afetOlcegi = document.getElementById('f-afet-olcegi').value;
+  
+  if (!sehir) {
+    toast("⚠️ Önce şehir veya ilçe bilgisini girin.",'error');
+    setAiPanelStatus('Analiz başlatılamadı: şehir bilgisi eksik.','Şehir / ilçe alanı boş olduğu için AI analizi çalıştırılmadı.');
+    return;
+  }
+  
+  const btn = document.getElementById('ai-query-btn');
+  const modal = document.getElementById('ai-modal');
+  const content = document.getElementById('ai-modal-content');
+  const meta = document.getElementById('ai-modal-meta');
+  
+  btn.innerHTML = "⏳ Analiz Ediliyor...";
+  btn.disabled = true;
+  content.innerHTML = '';
+  meta.textContent = '';
+  setAiPanelStatus('Analiz hazırlanıyor…','AI ve offline tahmin motoru şehir, afet türü ve ölçek bilgilerini değerlendiriyor.');
+  
+  try {
+    const res = await fetch('/api/ai_query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sehir: sehir,
+        afet_turu: afetTuru,
+        afet_olcegi: afetOlcegi
+      })
+    });
+    
+    const data = await res.json();
+    
+    if (res.ok && data.success) {
+      content.innerHTML = data.result_html || data.result || '';
+      const warnings = Array.isArray(data.warnings) ? data.warnings.length : 0;
+      meta.textContent = `${data.source_label || 'Analiz'}${warnings ? ` • ${warnings} uyarı` : ''}`;
+      const preview=summarizeAiResult(data.result_html || data.result || '');
+      setAiPanelStatus(
+        `${data.source_label || 'Analiz tamamlandı'}${warnings ? ` • ${warnings} uyarı` : ''}`,
+        preview ? `${preview.slice(0,260)}${preview.length>260?'…':''}` : 'Analiz tamamlandı. Ayrıntılar modal pencerede açık.'
+      );
+      modal.style.display = 'flex';
+    } else {
+      toast("❌ " + (data.detail || "AI analizi başarısız."),'error');
+      setAiPanelStatus('Analiz başarısız oldu.','Sunucudan geçerli bir analiz sonucu alınamadı.');
+    }
+  } catch (err) {
+    toast("❌ Sunucu bağlantı hatası.",'error');
+    setAiPanelStatus('Analiz başlatılamadı.','AI servisine ulaşılırken bağlantı hatası oluştu.');
+  } finally {
+    btn.innerHTML = "🧠 AI AFET ANALİZİ (Yapay Zeka)";
+    btn.disabled = false;
+  }
+}
+
 async function saveRecord(showBand=true){
+  const ayirtDurum=document.getElementById('f-ayirt-durum')?.value||'Yok';
   const body={
     ad_soyad:document.getElementById('f-adsoyad').value,
     cinsiyet:document.getElementById('f-cinsiyet').value||'Bilinmiyor',
@@ -3682,7 +4422,10 @@ async function saveRecord(showBand=true){
     kilo:document.getElementById('f-kilo').value,
     goz:document.getElementById('f-goz').value,
     sac:document.getElementById('f-sac').value,
-    triyaj:document.getElementById('f-triyaj').value,
+    kan_grubu:document.getElementById('f-kan')?.value||'',
+    ayirt_edici_iz_durumu:ayirtDurum,
+    ayirt_edici_iz_detay:ayirtDurum==='Var'?(document.getElementById('f-ayirt-detay')?.value||''):'',
+    triyaj:document.getElementById('f-triyaj-sel').value||document.getElementById('f-triyaj').value,
     bilincl:document.getElementById('f-bilinc').value,
     dna:document.getElementById('f-dna').value,
     parmak_izi_id:document.getElementById('f-fp').value,
@@ -3699,7 +4442,7 @@ async function saveRecord(showBand=true){
   };
   if(!navigator.onLine){
     queueOfflineRecord(body);
-    toast('İnternet yok: kayıt offline kuyruğa alındı','info');
+    toast(T('queuedOffline'),'info');
     sysLog('Kayıt offline kuyruğa alındı','warn');
     return {ok:true,queued:true};
   }
@@ -3708,9 +4451,9 @@ async function saveRecord(showBand=true){
     if(!r.ok)throw new Error('HTTP '+r.status);
     const rec=await r.json();
     _lastSavedRecord=rec;
-    toast('Kayıt kaydedildi!','ok');beep('success');
+    toast(T('savedOk'),'ok');beep('success');
     if(rec&&Array.isArray(rec._conflicts)&&rec._conflicts.length){
-      const msg=`Çakışma uyarısı (${rec._conflicts.length})`;
+      const msg=`${T('conflictWarn')} (${rec._conflicts.length})`;
       toast(msg,'error');
       sysLog(msg,'warn');
     }
@@ -3720,7 +4463,7 @@ async function saveRecord(showBand=true){
     return {ok:true,queued:false,record:rec};
   }catch(e){
     queueOfflineRecord(body);
-    toast('Sunucuya erişilemedi: kayıt kuyruğa alındı','error');
+    toast(T('queuedNoServer'),'error');
     sysLog('Kayıt kuyruğa alındı: '+e.message,'warn');
     return {ok:true,queued:true};
   }
@@ -3775,8 +4518,8 @@ function printWristband(){
 }
 
 function clearForm(){
-  ['f-adsoyad','f-boy','f-kilo','f-notlar','f-olay','f-ekip','f-gps','f-fp','f-rfid','f-foto','f-vucut','f-dis'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  ['f-bilinc','f-dna','f-goz','f-sac','f-transfer'].forEach(id=>{const e=document.getElementById(id);if(e)e.selectedIndex=0;});
+  ['f-adsoyad','f-boy','f-kilo','f-notlar','f-olay','f-ekip','f-gps','f-fp','f-rfid','f-foto','f-vucut','f-dis','f-ayirt-detay'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['f-bilinc','f-dna','f-goz','f-sac','f-transfer','f-kan','f-ayirt-durum'].forEach(id=>{const e=document.getElementById(id);if(e)e.selectedIndex=0;});
   document.getElementById('f-triyaj').value='';
   document.getElementById('f-triyaj-sel').value='';
   document.getElementById('char-cnt').textContent='0/100';
@@ -3788,17 +4531,22 @@ function clearForm(){
   document.getElementById('fp-disp').className='bv w';
   document.getElementById('gb-m').className='g-btn';
   document.getElementById('gb-f').className='g-btn';
+  const faceImg=document.getElementById('face-img');
+  if(faceImg)faceImg.src='';
+  updateMarkVisibility();
   genID();
+  updateOpsSummary();
+  renderAutopilotMini();
 }
 
 async function syncAll(){
-  toast('Senkronize ediliyor…','info');
+  toast(T('syncNow'),'info');
   await flushOfflineQueue();
   try{
     const d=await fetch(API+'/api/sync',{method:'POST'}).then(r=>r.json());
-    toast(`Senkronize: ${d.synced}/${d.total}`,'ok');
+    toast(`${T('syncDone')}: ${d.synced}/${d.total}`,'ok');
   }catch(e){
-    toast('Senkron hatası','error');
+    toast(T('syncErr'),'error');
   }
 }
 
@@ -3817,6 +4565,69 @@ function _renderSysLog(){
     <span class="sl-dot" style="color:${col[e.type]||'#607898'}">●</span>
     <span class="sl-time">${e.t}</span>
     <span class="sl-msg">${e.msg}</span></div>`).join('');
+}
+
+function _renderMsgFeed(){
+  const feed=document.getElementById('msg-feed');
+  if(!feed)return;
+  if(!_msgCache.length){
+    feed.innerHTML='<div id="msg-empty">Henüz mesaj yok</div>';
+    return;
+  }
+  const rows=_msgCache.slice(-16).reverse().map(m=>{
+    const person=[m.person_id,m.person_name].filter(Boolean).join(' • ')||'Kişi belirtilmedi';
+    return `<div class="msg-item">
+      <div class="msg-head">
+        <span class="msg-sender">${escAttr(m.sender||'Operatör')}</span>
+        <span class="msg-time">${escAttr(m.timestamp||'')}</span>
+      </div>
+      <div class="msg-person">${escAttr(person)}</div>
+      <div class="msg-body">${escAttr(m.message||'')}</div>
+    </div>`;
+  }).join('');
+  feed.innerHTML=rows;
+}
+
+async function loadMessages(){
+  const feed=document.getElementById('msg-feed');
+  if(!feed)return;
+  try{
+    const msgs=await fetch(API+'/api/messages?limit=120').then(r=>r.json());
+    _msgCache=Array.isArray(msgs)?msgs:[];
+    _renderMsgFeed();
+  }catch(e){
+    feed.innerHTML='<div id="msg-empty">Mesajlar alınamadı</div>';
+  }
+}
+
+async function sendLocalMessage(){
+  const txtEl=document.getElementById('msg-text');
+  const personEl=document.getElementById('msg-person');
+  if(!txtEl)return;
+  const message=(txtEl.value||'').trim();
+  if(!message){toast('Mesaj boş olamaz','error');return;}
+  const personRaw=(personEl?.value||'').trim();
+  const payload={
+    sender:_currentUser||'Veri Yönetimi',
+    person_id:personRaw,
+    person_name:'',
+    message,
+    source:'data-panel'
+  };
+  try{
+    const r=await fetch(API+'/api/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    txtEl.value='';
+    if(personEl)personEl.value=personRaw;
+    loadMessages();
+    toast('Mesaj gönderildi','ok');
+  }catch(e){
+    toast('Mesaj gönderilemedi','error');
+  }
 }
 
 // ─── OFFLINE KUYRUK + SENKRON DURUMU ─────────────
@@ -3839,24 +4650,25 @@ function updateSyncPill(){
   const pill=document.getElementById('sync-pill');
   const txt=document.getElementById('sync-pill-text');
   if(!pill||!txt)return;
+  const t=I18N[window.LANG]||I18N.tr;
   const q=getOfflineQueue();
   pill.classList.remove('warn','err','syncing');
   if(_offlineSyncing){
     pill.classList.add('syncing');
-    txt.textContent=`SENKRON: GÖNDERİLİYOR (${q.length})`;
+    txt.textContent=`${t.syncSending} (${q.length})`;
     return;
   }
   if(!navigator.onLine){
     pill.classList.add('err');
-    txt.textContent=`OFFLINE: KUYRUK ${q.length}`;
+    txt.textContent=`${t.syncOffline} ${q.length}`;
     return;
   }
   if(q.length){
     pill.classList.add('warn');
-    txt.textContent=`KUYRUK: ${q.length} BEKLİYOR`;
+    txt.textContent=`${t.syncQueue}: ${q.length} ${t.syncWaiting}`;
     return;
   }
-  txt.textContent='SENKRON: CANLI';
+  txt.textContent=t.syncLive;
 }
 function queueOfflineRecord(body){
   const q=getOfflineQueue();
@@ -3916,6 +4728,7 @@ async function checkPW(){
     _currentUser=d.username;
     _currentPerms=Object.assign({},rolePerms(d.role),d.permissions||{});
     loadVoiceAliases(_currentUser||'default');
+    updateOpsSummary();
     closePWModal();
     openDP();
     sysLog(`Giriş: ${_currentUser} (${_currentRole})`,'ok');
@@ -3938,9 +4751,14 @@ function openDP(){
   document.getElementById('dp-changepw-btn').style.display=canPerm('change_password')?'':'none';
   document.getElementById('dp-changepw-panel').style.display='none';
   loadDP();
+  loadMessages();
+  updateOpsSummary();
   sysLog(`Veri yönetimi açıldı (${_currentRole||'viewer'})`,'info');
 }
-function closeDP(){document.getElementById('data-panel').classList.remove('open');}
+function closeDP(){
+  document.getElementById('data-panel').classList.remove('open');
+  updateOpsSummary();
+}
 
 function transferClassName(st){
   const s=(st||'').toLowerCase();
@@ -3974,7 +4792,7 @@ async function loadDP(){
   document.getElementById('dp-b').textContent=stats.triage?.SİYAH||0;
   const tb=document.getElementById('dp-tbody');tb.innerHTML='';
   if(!recs.length){
-    tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">Kayıt bulunamadı</td></tr>';
+    tb.innerHTML='<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:20px">Kayıt bulunamadı</td></tr>';
     return;
   }
   recs.slice().reverse().forEach(rec=>{
@@ -3991,6 +4809,11 @@ async function loadDP(){
     const selBox=canPerm('bulk_qr')?`<input type="checkbox" class="dp-sel" value="${uid}" style="margin-right:6px;vertical-align:middle">`:'';
     const conflict=(rec['ÇAKIŞMA UYARISI']||'').trim();
     const conflictMark=conflict?`<span title="${escAttr(conflict)}" style="color:#f87171;font-weight:800;margin-left:4px">⚠</span>`:'';
+    const kan=rec['KAN GRUBU']||'–';
+    const ayirtDurumSum=rec['AYIRT EDİCİ İZ DURUMU']||'Yok';
+    const ayirtAcikSum=rec['AYIRT EDİCİ İZ AÇIKLAMA']||'';
+    const ayirtSum=ayirtDurumSum==='Var'&&ayirtAcikSum?`Var: ${ayirtAcikSum}`:ayirtDurumSum;
+    const ayirtShort=ayirtSum.length>24?(ayirtSum.substring(0,24)+'…'):ayirtSum;
 
     const sumRow=document.createElement('tr');
     sumRow.className='dp-row-summary';
@@ -3999,6 +4822,8 @@ async function loadDP(){
       <td>${rec['AD SOYAD']||'–'}${conflictMark}</td>
       <td><span class="badge ${bc}">${t||'–'}</span></td>
       <td>${transferBadge(transfer)}</td>
+      <td style="font-size:10px">${kan}</td>
+      <td style="font-size:10px;color:var(--muted)">${ayirtShort||'–'}</td>
       <td style="font-size:10px;color:var(--muted)">${(rec['GPS']||'–').substring(0,24)}</td>
       <td style="font-family:monospace;color:var(--accent);font-size:10px">${rec['PARMAK İZİ ID']||'–'}</td>
       <td style="font-size:10px;color:var(--muted)">${(rec['TARİH/SAAT']||'').substring(0,16)}</td>
@@ -4019,9 +4844,12 @@ async function loadDP(){
     const qrSrc=`${API}/api/qr/${encodeURIComponent(rec['KİMLİK NO']||'')}`;
     const vucut=(rec['VÜCUT BULGULARI']||'–').replace(/,/g,', ');
     const dna=rec['DNA']||'–';
+    const ayirtDurum=rec['AYIRT EDİCİ İZ DURUMU']||'Yok';
+    const ayirtAcik=rec['AYIRT EDİCİ İZ AÇIKLAMA']||'';
+    const ayirtText=ayirtDurum==='Var'&&ayirtAcik?`Var — ${ayirtAcik}`:ayirtDurum;
     const dnaHtml=dna==='Alındı'?`<span style="color:var(--ok)">✅ Alındı</span>`
                  :dna==='Alınmadı'?`<span style="color:var(--err)">❌ Alınmadı</span>`:dna;
-    detRow.innerHTML=`<td colspan="8" style="padding:0">
+    detRow.innerHTML=`<td colspan="10" style="padding:0">
       <div class="dp-row-detail-inner" id="dp-inner-${safeUid}">
         <div class="dp-detail-grid">
           ${photoHtml}
@@ -4033,6 +4861,8 @@ async function loadDP(){
           <span class="dp-dl">TRANSFER</span><span class="dp-dv">${transferBadge(transfer)}</span>
           <span class="dp-dl">BOY / KİLO</span><span class="dp-dv">${rec['BOY']||'–'} cm / ${rec['KİLO']||'–'} kg</span>
           <span class="dp-dl">SAÇ / GÖZ</span><span class="dp-dv">${rec['SAÇ']||'–'} / ${rec['GÖZ']||'–'}</span>
+          <span class="dp-dl">KAN GRUBU</span><span class="dp-dv">${rec['KAN GRUBU']||'–'}</span>
+          <span class="dp-dl">AYIRT EDİCİ İZ</span><span class="dp-dv">${ayirtText||'–'}</span>
           <span class="dp-dl">YARALANMA</span><span class="dp-dv" style="color:#f87171">${vucut}</span>
           <span class="dp-dl">EKSİK DİŞLER</span><span class="dp-dv">${rec['EKSİK DİŞLER']||'–'}</span>
           <span class="dp-dl">DNA</span><span class="dp-dv">${dnaHtml}</span>
@@ -4198,6 +5028,11 @@ function connectWS(){
       document.getElementById('f-fp').value=data.id||'';
       if(data.found)toast('Parmak izi: '+data.id,'ok');
     }
+    if(type==='message_added'){
+      _msgCache.push(data||{});
+      if(_msgCache.length>500)_msgCache=_msgCache.slice(-500);
+      _renderMsgFeed();
+    }
     if(type==='record_added')loadMapMarkers();
   };
 }
@@ -4292,16 +5127,22 @@ async function exportEmergencyPackage(){
 window.addEventListener('load',()=>{
   initUiZoom();
   initLang();
+  updateMarkVisibility();
   initVoice();
   loadVoiceAliases(_voiceAliasProfile);
   initZoneListeners();
   connectWS();
+  loadMessages();
   initFaceAPI(); // yüz tanıma modelini arka planda yükle
   updateSyncPill();
+  updateOpsSummary();
+  renderAutopilotMini();
+  setAiPanelStatus('Şehir / ilçe seçip analizi çalıştırın. Sonuç ayrıntısı modal pencerede açılır.','Henüz analiz çalıştırılmadı.');
   flushOfflineQueue();
   setInterval(flushOfflineQueue,15000);
-  window.addEventListener('online',()=>{updateSyncPill();flushOfflineQueue();});
-  window.addEventListener('offline',updateSyncPill);
+  document.getElementById('loc-q')?.addEventListener('input',updateOpsSummary);
+  window.addEventListener('online',()=>{updateSyncPill();updateOpsSummary();flushOfflineQueue();});
+  window.addEventListener('offline',()=>{updateSyncPill();updateOpsSummary();});
   sysLog('TAMGA-ADKS başlatıldı','ok');
   fetch(API+'/api/gps').then(r=>r.json()).then(d=>{if(d.lat)showGPS(d.lat,d.lon,true);});
   fetch(API+'/api/health').then(r=>r.json()).then(d=>{
