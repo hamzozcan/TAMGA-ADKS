@@ -16,6 +16,7 @@ normal bilgisayarda --simulate bayrağıyla simülasyon modu.
 import argparse
 import asyncio
 import csv
+import difflib
 import html
 import io
 import json
@@ -23,6 +24,7 @@ import logging
 import math
 import os
 import random
+import re
 import string
 import sys
 import threading
@@ -33,11 +35,25 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set
 
 import requests
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+try:
+    from google import genai
+    GENAI_OK = True
+except ImportError:
+    genai = None
+    GENAI_OK = False
+
+GEMINI_API_KEY = (
+    os.environ.get("GEMINI_API_KEY", "").strip()
+    or os.environ.get("TAMGA_GEMINI_API_KEY", "").strip()
+)
+GEMINI_MODEL = os.environ.get("TAMGA_GEMINI_MODEL", "gemini-2.5-flash").strip() or "gemini-2.5-flash"
 
 # Opsiyonel: harita üretimi
 try:
@@ -72,6 +88,8 @@ log = logging.getLogger("TAMGA")
 BASE_DIR      = Path(__file__).parent
 RECORDS_FILE  = BASE_DIR / "records.json"
 KEY_FILE      = BASE_DIR / "tamga.key"
+MESSAGES_FILE = BASE_DIR / "data" / "messages.json"
+MESSAGES_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 def _load_or_create_key() -> bytes:
     if KEY_FILE.exists():
@@ -102,6 +120,10 @@ TILE_CACHE.mkdir(parents=True, exist_ok=True)
 SAT_CACHE.mkdir(parents=True, exist_ok=True)
 CONFIG_FILE  = BASE_DIR / "tamga_config.json"
 TEMPLATE_FILE = BASE_DIR / "templates" / "tamga.html"
+MESSAGES_TEMPLATE_FILE = BASE_DIR / "templates" / "messages.html"
+AFAD_TEMPLATE_FILE = BASE_DIR / "templates" / "afad.html"
+FAMILY_TEMPLATE_FILE = BASE_DIR / "templates" / "yakin.html"
+AFAD_NODES_FILE = BASE_DIR / "data" / "afad_nodes.json"
 STATIC_DIR = BASE_DIR / "static"
 STATIC_DIR.mkdir(exist_ok=True)
 RECORDINGS_DIR = BASE_DIR / "recordings"
@@ -111,6 +133,9 @@ VOICE_ALIAS_PROFILE_FILE = BASE_DIR / "voice_alias_profiles.json"
 
 ORANGE_PI_URL = "http://192.168.1.100:8080"   # Değiştirebilirsiniz
 BUZZER_PIN = 18
+AFAD_BRIDGE_HEADER = "x-tamga-key"
+DEFAULT_NODE_ID = os.environ.get("TAMGA_NODE_ID", "TAMGA-EDGE-001").strip() or "TAMGA-EDGE-001"
+DEFAULT_NODE_LABEL = os.environ.get("TAMGA_NODE_LABEL", "TAMGA Saha Düğümü").strip() or "TAMGA Saha Düğümü"
 
 
 def _normalize_profile_name(name: str) -> str:
@@ -232,6 +257,9 @@ def _export_csv_bytes(records: List[Dict]) -> bytes:
         "DNA",
         "VÜCUT BULGULARI",
         "EKSİK DİŞLER",
+        "KAN GRUBU",
+        "AYIRT EDİCİ İZ DURUMU",
+        "AYIRT EDİCİ İZ AÇIKLAMA",
         "BOY",
         "KİLO",
         "SAÇ",
@@ -353,6 +381,720 @@ def _norm_text(v: str) -> str:
     return " ".join(t.split())
 
 
+_TR_FAMILY_TRANSLATION = str.maketrans({
+    "ç": "c",
+    "ğ": "g",
+    "ı": "i",
+    "ö": "o",
+    "ş": "s",
+    "ü": "u",
+})
+
+
+def _family_norm_text(v: str) -> str:
+    return _norm_text(v).translate(_TR_FAMILY_TRANSLATION)
+
+
+def _family_tokens(v: str) -> Set[str]:
+    return {
+        tok for tok in re.findall(r"[a-z0-9]+", _family_norm_text(v))
+        if tok and len(tok) >= 2
+    }
+
+
+def _parse_gps_coords(value: str) -> Optional[Dict[str, float]]:
+    txt = str(value or "").strip().replace(";", ",")
+    if "," not in txt:
+        return None
+    parts = [p.strip() for p in txt.split(",")]
+    if len(parts) < 2:
+        return None
+    try:
+        lat = float(parts[0])
+        lon = float(parts[1])
+    except Exception:
+        return None
+    if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+        return None
+    return {"lat": lat, "lon": lon}
+
+
+def _family_match_level(score: float) -> str:
+    if score >= 0.82:
+        return "high"
+    if score >= 0.62:
+        return "medium"
+    return "low"
+
+
+def _family_match_label(level: str) -> str:
+    return {
+        "high": "Yüksek Güven",
+        "medium": "Orta Güven",
+        "low": "Düşük Güven",
+    }.get(level, "Düşük Güven")
+
+
+def _family_score_record(rec: Dict, query: str) -> Optional[Dict[str, object]]:
+    q_raw = (query or "").strip()
+    q_norm = _family_norm_text(q_raw)
+    if len(q_norm) < 2:
+        return None
+
+    record_id = str(rec.get("KİMLİK NO", "") or "")
+    name = str(rec.get("AD SOYAD", "Bilinmiyor") or "Bilinmiyor")
+    team = str(rec.get("EKİP", "") or "")
+    event_code = str(rec.get("OLAY KODU", "") or "")
+    notes = str(rec.get("NOTLAR", "") or "")
+    triage = str(rec.get("TRİYAJ", "Bilinmiyor") or "Bilinmiyor")
+    transfer = str(rec.get("TRANSFER DURUMU", "Sahada") or "Sahada")
+
+    rid_norm = _family_norm_text(record_id)
+    name_norm = _family_norm_text(name)
+    team_norm = _family_norm_text(team)
+    event_norm = _family_norm_text(event_code)
+    notes_norm = _family_norm_text(notes)
+    triage_norm = _family_norm_text(triage)
+    transfer_norm = _family_norm_text(transfer)
+    q_tokens = _family_tokens(q_raw)
+
+    score = 0.0
+    reasons: List[str] = []
+
+    if q_norm == rid_norm and rid_norm:
+        score = 1.0
+        reasons.append("kimlik numarası tam eşleşti")
+    elif q_norm and q_norm in rid_norm and len(q_norm) >= 4:
+        score = max(score, 0.95)
+        reasons.append("kimlik numarası benzerliği bulundu")
+
+    if q_norm == name_norm and name_norm:
+        score = max(score, 0.96)
+        reasons.append("ad soyad tam eşleşti")
+    elif q_norm and q_norm in name_norm and len(q_norm) >= 3:
+        score = max(score, 0.86)
+        reasons.append("ad soyad içinde doğrudan eşleşme bulundu")
+
+    if q_norm and name_norm:
+        ratio = difflib.SequenceMatcher(None, q_norm, name_norm).ratio()
+        if ratio >= 0.88:
+            score = max(score, 0.80 + ((ratio - 0.88) * 1.25))
+            reasons.append("ad soyad çok yüksek benzerlik gösteriyor")
+        elif ratio >= 0.74:
+            score = max(score, 0.54 + ((ratio - 0.74) * 1.25))
+            reasons.append("ad soyad benzerlik gösteriyor")
+
+    if q_tokens:
+        name_tokens = _family_tokens(name)
+        overlap = q_tokens & name_tokens
+        if overlap:
+            coverage = len(overlap) / max(len(q_tokens), 1)
+            score = max(score, 0.44 + coverage * 0.44)
+            if coverage >= 0.66:
+                reasons.append("isim parçaları büyük ölçüde örtüşüyor")
+            else:
+                reasons.append("isim parçalarında kısmi örtüşme var")
+
+        if q_tokens & _family_tokens(team):
+            score += 0.06
+            reasons.append("ekip bilgisiyle ilişkili")
+        if q_tokens & _family_tokens(event_code):
+            score += 0.08
+            reasons.append("olay kodu ile ilişkili")
+        if q_tokens & _family_tokens(notes):
+            score += 0.04
+            reasons.append("notlarda benzer ifade bulundu")
+        if q_tokens & _family_tokens(triage):
+            score += 0.03
+            reasons.append("triyaj bilgisiyle ilişkili")
+        if q_tokens & _family_tokens(transfer):
+            score += 0.03
+            reasons.append("transfer durumuyla ilişkili")
+
+    if q_norm and q_norm in notes_norm and len(q_norm) >= 4:
+        score = max(score, 0.40)
+        reasons.append("notlarda doğrudan eşleşme bulundu")
+    if q_norm and q_norm in event_norm and len(q_norm) >= 3:
+        score = max(score, 0.42)
+        reasons.append("olay kodunda doğrudan eşleşme bulundu")
+    if q_norm and q_norm in team_norm and len(q_norm) >= 3:
+        score = max(score, 0.38)
+        reasons.append("ekip kodunda doğrudan eşleşme bulundu")
+    if q_norm and q_norm in triage_norm:
+        score = max(score, 0.34)
+        reasons.append("triyaj terimi eşleşti")
+    if q_norm and q_norm in transfer_norm:
+        score = max(score, 0.34)
+        reasons.append("transfer durumu eşleşti")
+
+    score = min(score, 1.0)
+    if score < 0.34:
+        return None
+
+    gps_point = _parse_gps_coords(rec.get("GPS", ""))
+    map_lat: Optional[float] = None
+    map_lon: Optional[float] = None
+    approx_location = "Konum bilgisi paylaşılmıyor"
+    if gps_point:
+        map_lat = round(gps_point["lat"], 2)
+        map_lon = round(gps_point["lon"], 2)
+        approx_location = f"{map_lat:.2f}, {map_lon:.2f} civarı"
+
+    level = _family_match_level(score)
+    result = _public_record_view(rec)
+    result.update({
+        "match_score": int(round(score * 100)),
+        "match_level": level,
+        "match_label": _family_match_label(level),
+        "reasons": list(dict.fromkeys(reasons))[:4],
+        "approx_location": approx_location,
+        "map_lat": map_lat,
+        "map_lon": map_lon,
+        "face_available": bool(rec.get("YÜZ FOTOĞRAFI")),
+    })
+    return result
+
+
+def _build_family_match_payload(query: str, limit: int = 12) -> Dict[str, object]:
+    cleaned_query = (query or "").strip()
+    empty_summary = {
+        "total_matches": 0,
+        "high_confidence": 0,
+        "mapped_count": 0,
+        "latest_update": "",
+        "triage_summary": {},
+        "transfer_summary": {},
+        "hotspots": [],
+    }
+    if len(cleaned_query) < 2:
+        return {"query": cleaned_query, "matches": [], "summary": empty_summary}
+
+    scored: List[Dict[str, object]] = []
+    for rec in state.data_mgr.get_all():
+        item = _family_score_record(rec, cleaned_query)
+        if item:
+            scored.append(item)
+
+    scored.sort(
+        key=lambda item: (
+            int(item.get("match_score", 0)),
+            _parse_timestamp(str(item.get("timestamp", ""))),
+        ),
+        reverse=True,
+    )
+    matches = scored[:limit]
+
+    triage_summary: Dict[str, int] = {}
+    transfer_summary: Dict[str, int] = {}
+    hotspots: Dict[str, Dict[str, object]] = {}
+    for item in matches:
+        triage_label = str(item.get("triage", "Bilinmiyor") or "Bilinmiyor")
+        transfer_label = str(item.get("transfer", "Sahada") or "Sahada")
+        triage_summary[triage_label] = triage_summary.get(triage_label, 0) + 1
+        transfer_summary[transfer_label] = transfer_summary.get(transfer_label, 0) + 1
+        lat = item.get("map_lat")
+        lon = item.get("map_lon")
+        if lat is None or lon is None:
+            continue
+        hotspot_key = f"{round(float(lat), 1):.1f},{round(float(lon), 1):.1f}"
+        entry = hotspots.setdefault(hotspot_key, {
+            "label": f"{round(float(lat), 1):.1f}, {round(float(lon), 1):.1f} civarı",
+            "count": 0,
+        })
+        entry["count"] = int(entry["count"]) + 1
+
+    summary = {
+        "total_matches": len(matches),
+        "high_confidence": sum(1 for item in matches if item.get("match_level") == "high"),
+        "mapped_count": sum(1 for item in matches if item.get("map_lat") is not None and item.get("map_lon") is not None),
+        "latest_update": str(matches[0].get("timestamp", "")) if matches else "",
+        "triage_summary": triage_summary,
+        "transfer_summary": transfer_summary,
+        "hotspots": sorted(hotspots.values(), key=lambda item: int(item.get("count", 0)), reverse=True)[:4],
+    }
+    return {"query": cleaned_query, "matches": matches, "summary": summary}
+
+
+AI_SCALE_FACTORS = {
+    "dusuk": 0.35,
+    "orta": 0.7,
+    "yuksek": 1.0,
+    "cok yuksek": 1.35,
+    "yikici": 1.8,
+}
+
+CITY_POPULATION_HINTS = {
+    "adana": {"label": "Adana", "population": 2270000},
+    "adiyaman": {"label": "Adıyaman", "population": 610000},
+    "ankara": {"label": "Ankara", "population": 5800000},
+    "antalya": {"label": "Antalya", "population": 2700000},
+    "aydin": {"label": "Aydın", "population": 1160000},
+    "balikesir": {"label": "Balıkesir", "population": 1280000},
+    "bursa": {"label": "Bursa", "population": 3230000},
+    "canakkale": {"label": "Çanakkale", "population": 570000},
+    "denizli": {"label": "Denizli", "population": 1060000},
+    "diyarbakir": {"label": "Diyarbakır", "population": 1810000},
+    "elazig": {"label": "Elazığ", "population": 600000},
+    "erzincan": {"label": "Erzincan", "population": 245000},
+    "erzurum": {"label": "Erzurum", "population": 750000},
+    "eskisehir": {"label": "Eskişehir", "population": 915000},
+    "gaziantep": {"label": "Gaziantep", "population": 2160000},
+    "hatay": {"label": "Hatay", "population": 1540000},
+    "istanbul": {"label": "İstanbul", "population": 15600000},
+    "izmir": {"label": "İzmir", "population": 4480000},
+    "kahramanmaras": {"label": "Kahramanmaraş", "population": 1160000},
+    "kayseri": {"label": "Kayseri", "population": 1450000},
+    "kilis": {"label": "Kilis", "population": 160000},
+    "kocaeli": {"label": "Kocaeli", "population": 2120000},
+    "konya": {"label": "Konya", "population": 2330000},
+    "malatya": {"label": "Malatya", "population": 760000},
+    "manisa": {"label": "Manisa", "population": 1470000},
+    "mersin": {"label": "Mersin", "population": 1940000},
+    "mugla": {"label": "Muğla", "population": 1080000},
+    "ordu": {"label": "Ordu", "population": 770000},
+    "osmaniye": {"label": "Osmaniye", "population": 560000},
+    "rize": {"label": "Rize", "population": 350000},
+    "sakarya": {"label": "Sakarya", "population": 1110000},
+    "samsun": {"label": "Samsun", "population": 1380000},
+    "sanliurfa": {"label": "Şanlıurfa", "population": 2210000},
+    "tekirdag": {"label": "Tekirdağ", "population": 1180000},
+    "tokat": {"label": "Tokat", "population": 610000},
+    "trabzon": {"label": "Trabzon", "population": 830000},
+    "van": {"label": "Van", "population": 1140000},
+}
+
+AI_DISASTER_PROFILES = [
+    {
+        "name": "Deprem",
+        "keywords": ("deprem",),
+        "impact_ratio": 0.18,
+        "injury_ratio": 0.024,
+        "fatality_ratio": 0.0038,
+        "areas": [
+            "eski yapı stokunun yoğun olduğu mahalleler",
+            "ana ulaşım koridorları ve kavşaklar",
+            "hastane ve toplanma alanı çevreleri",
+            "sanayi ve depo bölgeleri",
+        ],
+    },
+    {
+        "name": "Sel",
+        "keywords": ("sel", "su baskini", "tas kin", "taskin"),
+        "impact_ratio": 0.12,
+        "injury_ratio": 0.01,
+        "fatality_ratio": 0.0008,
+        "areas": [
+            "dere yatakları ve taşkın ovaları",
+            "alt geçitler ve düşük kotlu yollar",
+            "zemin kat konut ve iş yerleri",
+            "köprü ve menfez bağlantıları",
+        ],
+    },
+    {
+        "name": "Yangın",
+        "keywords": ("yangin", "orman", "wildfire"),
+        "impact_ratio": 0.08,
+        "injury_ratio": 0.007,
+        "fatality_ratio": 0.0005,
+        "areas": [
+            "orman sınırındaki yerleşimler",
+            "rüzgar koridorları ve kuru bitki örtüsü alanları",
+            "enerji nakil hattı çevreleri",
+            "depo ve akaryakıt alanları",
+        ],
+    },
+    {
+        "name": "Heyelan",
+        "keywords": ("heyelan", "toprak kaymasi", "landslide"),
+        "impact_ratio": 0.04,
+        "injury_ratio": 0.008,
+        "fatality_ratio": 0.0011,
+        "areas": [
+            "eğimli yamaç yerleşimleri",
+            "vadi tabanına bağlanan yollar",
+            "yağış almış gevşek zemin bölgeleri",
+            "istinat duvarı riski taşıyan alanlar",
+        ],
+    },
+    {
+        "name": "Çığ",
+        "keywords": ("cig", "çığ", "avalanche"),
+        "impact_ratio": 0.025,
+        "injury_ratio": 0.008,
+        "fatality_ratio": 0.0014,
+        "areas": [
+            "yüksek eğimli kar yüklü yamaçlar",
+            "dağ yolu ve geçitler",
+            "yayla ve dağ evi kümeleri",
+            "arama kurtarma erişimi sınırlı bölgeler",
+        ],
+    },
+    {
+        "name": "Patlama / Endüstriyel Kaza",
+        "keywords": ("patlama", "kimyasal", "endustriyel", "endüstriyel", "kaza", "gaz kacagi", "gaz kaçağı"),
+        "impact_ratio": 0.05,
+        "injury_ratio": 0.018,
+        "fatality_ratio": 0.0022,
+        "areas": [
+            "sanayi tesisleri ve organize sanayi bölgeleri",
+            "depo ve lojistik merkezleri",
+            "hakim rüzgar yönündeki yerleşimler",
+            "ana tahliye aksları",
+        ],
+    },
+    {
+        "name": "Fırtına",
+        "keywords": ("firtina", "kasirga", "hortum", "ruzgar", "rüzgar"),
+        "impact_ratio": 0.09,
+        "injury_ratio": 0.006,
+        "fatality_ratio": 0.0004,
+        "areas": [
+            "kıyı şeridi ve açık alanlar",
+            "çatı ve cephe hasarı riski olan yapılar",
+            "enerji ve haberleşme hatları",
+            "geçici barınma alanları",
+        ],
+    },
+]
+
+AI_DEFAULT_PROFILE = {
+    "name": "Genel Afet",
+    "impact_ratio": 0.07,
+    "injury_ratio": 0.007,
+    "fatality_ratio": 0.0007,
+    "areas": [
+        "yoğun nüfuslu merkez ilçeler",
+        "ulaşım ve lojistik düğümleri",
+        "kritik altyapı çevresi",
+        "geçici toplanma alanları",
+    ],
+}
+
+
+def _env_truthy(value: Optional[str]) -> bool:
+    return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _normalize_lookup_text(value: str) -> str:
+    txt = _ascii_text(str(value or "")).lower()
+    txt = re.sub(r"[^a-z0-9]+", " ", txt)
+    return " ".join(txt.split())
+
+
+def _format_int(value: int) -> str:
+    return f"{int(value):,}".replace(",", ".")
+
+
+def _resolve_city_population(city_name: str) -> Dict[str, object]:
+    raw = (city_name or "").strip()
+    cleaned = _normalize_lookup_text(raw)
+    parts = []
+    for piece in re.split(r"[,/|-]+", raw):
+        norm = _normalize_lookup_text(piece)
+        if norm:
+            parts.append(norm)
+    if cleaned and cleaned not in parts:
+        parts.append(cleaned)
+
+    for candidate in reversed(parts):
+        info = CITY_POPULATION_HINTS.get(candidate)
+        if info:
+            return {**info, "matched": True}
+
+    for key, info in CITY_POPULATION_HINTS.items():
+        if key in cleaned:
+            return {**info, "matched": True}
+
+    label = raw or "Belirtilmeyen şehir"
+    return {"label": label, "population": 650000, "matched": False}
+
+
+def _pick_disaster_profile(disaster_type: str) -> Dict[str, object]:
+    cleaned = _normalize_lookup_text(disaster_type)
+    for profile in AI_DISASTER_PROFILES:
+        for keyword in profile["keywords"]:
+            if _normalize_lookup_text(keyword) in cleaned:
+                return profile
+    return AI_DEFAULT_PROFILE
+
+
+def _pick_scale_factor(scale_name: str) -> float:
+    cleaned = _normalize_lookup_text(scale_name)
+    return AI_SCALE_FACTORS.get(cleaned, 0.85)
+
+
+def _field_snapshot(stats: Dict, record_count: int) -> Dict[str, int]:
+    tri = stats.get("triage", {}) if isinstance(stats, dict) else {}
+    return {
+        "record_count": int(record_count),
+        "red": int(tri.get("KIRMIZI", 0)),
+        "yellow": int(tri.get("SARI", 0)),
+        "green": int(tri.get("YEŞİL", tri.get("YESIL", 0))),
+        "black": int(tri.get("SİYAH", tri.get("SIYAH", 0))),
+    }
+
+
+def _estimate_disaster_summary(city_name: str, disaster_type: str, disaster_scale: str, stats: Dict) -> Dict[str, object]:
+    city_info = _resolve_city_population(city_name)
+    profile = _pick_disaster_profile(disaster_type)
+    scale_factor = _pick_scale_factor(disaster_scale)
+    snapshot = _field_snapshot(stats, int(stats.get("total", 0) if isinstance(stats, dict) else 0))
+    record_count = snapshot["record_count"]
+    critical_count = snapshot["red"] + snapshot["black"]
+    pressure_factor = 1.0
+    if record_count > 0:
+        pressure_factor += min(0.35, (critical_count / max(record_count, 1)) * 0.8)
+
+    population = int(city_info["population"])
+    impacted_people = max(50, int(population * float(profile["impact_ratio"]) * scale_factor))
+    injury_estimate = max(
+        snapshot["red"] * 4 + snapshot["yellow"] * 2,
+        int(population * float(profile["injury_ratio"]) * scale_factor * pressure_factor),
+    )
+    casualty_estimate = max(
+        snapshot["black"],
+        int(population * float(profile["fatality_ratio"]) * scale_factor * pressure_factor),
+    )
+    injury_estimate = min(injury_estimate, max(impacted_people, 1))
+    casualty_estimate = min(casualty_estimate, max(injury_estimate, impacted_people // 3))
+    injury_estimate = min(max(injury_estimate, casualty_estimate * 2), max(impacted_people, 1))
+
+    affected_regions = list(profile["areas"])
+    district = city_name.split(",")[0].strip() if "," in city_name else ""
+    if district and district.lower() != str(city_info["label"]).lower():
+        affected_regions.insert(0, f"{district} ve yakın çevresi")
+    affected_regions.insert(0, f"{city_info['label']} merkez")
+
+    operational_notes = [
+        f"Sahada doğrulanan {record_count} kayıt var; kritik triyaj sayısı {critical_count}.",
+        "Tıbbi tahliye koridoru, toplanma alanı ve hastane kapasitesi eş zamanlı izlenmeli.",
+        "Kimliklendirme akışı ile arama-kurtarma ekip listesi senkron tutulmalı.",
+    ]
+    if critical_count >= 5:
+        operational_notes.insert(1, "Kırmızı/siyah triyaj yoğunluğu nedeniyle ileri triyaj ve morg zinciri önceliklendirilmeli.")
+    if snapshot["yellow"] > snapshot["red"]:
+        operational_notes.append("Gecikmeli vakalar için ikinci dalga sevk planı hazırlanmalı.")
+    if not city_info["matched"]:
+        operational_notes.append("Şehir nüfusu tahmini genel katsayı ile üretildi; yerel nüfus bilgisiyle doğrulama önerilir.")
+
+    confidence = "yüksek" if city_info["matched"] and record_count >= 25 else "orta" if city_info["matched"] or record_count >= 10 else "düşük"
+
+    return {
+        "city": city_name.strip() or str(city_info["label"]),
+        "city_label": str(city_info["label"]),
+        "disaster_type": disaster_type.strip(),
+        "disaster_scale": disaster_scale.strip(),
+        "profile_name": str(profile["name"]),
+        "population_estimate": population,
+        "impacted_people_estimate": impacted_people,
+        "casualty_estimate": casualty_estimate,
+        "injury_estimate": injury_estimate,
+        "affected_regions": affected_regions[:5],
+        "operational_notes": operational_notes[:5],
+        "confidence": confidence,
+        "population_matched": bool(city_info["matched"]),
+        "field_snapshot": snapshot,
+    }
+
+
+def _safe_text_to_html(text: str) -> str:
+    lines = [html.escape(line) for line in str(text or "").splitlines()]
+    return "<br>".join(lines) if lines else ""
+
+
+def _render_ai_result_html(summary: Dict[str, object], source_label: str, narrative_html: str = "", warnings: Optional[List[str]] = None) -> str:
+    warns = warnings or []
+    warn_html = ""
+    if warns:
+        warn_items = "".join(f"<li>{html.escape(w)}</li>" for w in warns)
+        warn_html = (
+            "<div style='margin:14px 0;padding:12px 14px;border:1px solid rgba(251,191,36,.28);"
+            "border-radius:10px;background:rgba(251,191,36,.08)'>"
+            "<div style='font-weight:800;color:#fbbf24;margin-bottom:6px'>Uyarılar</div>"
+            f"<ul style='margin:0;padding-left:18px;color:#fde68a;line-height:1.5'>{warn_items}</ul>"
+            "</div>"
+        )
+
+    region_items = "".join(f"<li>{html.escape(item)}</li>" for item in summary.get("affected_regions", []))
+    note_items = "".join(f"<li>{html.escape(item)}</li>" for item in summary.get("operational_notes", []))
+    snapshot = summary.get("field_snapshot", {})
+    snapshot_line = (
+        f"{snapshot.get('record_count', 0)} kayıt"
+        f" | Kırmızı {snapshot.get('red', 0)}"
+        f" | Sarı {snapshot.get('yellow', 0)}"
+        f" | Yeşil {snapshot.get('green', 0)}"
+        f" | Siyah {snapshot.get('black', 0)}"
+    )
+
+    cards = [
+        ("Tahmini Nüfus", _format_int(int(summary.get("population_estimate", 0)))),
+        ("Tahmini Can Kaybı", _format_int(int(summary.get("casualty_estimate", 0)))),
+        ("Tahmini Yaralı", _format_int(int(summary.get("injury_estimate", 0)))),
+        ("Etkilenen Nüfus", _format_int(int(summary.get("impacted_people_estimate", 0)))),
+    ]
+    card_html = "".join(
+        "<div style='padding:12px;border:1px solid rgba(56,189,248,.18);border-radius:10px;background:rgba(2,6,14,.55)'>"
+        f"<div style='font-size:11px;color:#93c5fd;margin-bottom:4px'>{html.escape(label)}</div>"
+        f"<div style='font-size:22px;font-weight:800;color:#f8fafc'>{html.escape(value)}</div>"
+        "</div>"
+        for label, value in cards
+    )
+
+    advisory_block = ""
+    if narrative_html:
+        advisory_block = (
+            "<div style='margin-top:16px;padding:14px;border:1px solid rgba(139,92,246,.24);"
+            "border-radius:10px;background:rgba(139,92,246,.08)'>"
+            "<div style='font-size:12px;font-weight:800;color:#c4b5fd;margin-bottom:8px'>AI Operasyon Yorumu</div>"
+            f"<div style='font-size:13px;line-height:1.7;color:#e5e7eb'>{narrative_html}</div>"
+            "</div>"
+        )
+
+    return (
+        "<div style='display:flex;flex-direction:column;gap:14px'>"
+        "<div style='display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap'>"
+        f"<div><div style='font-size:12px;color:#93c5fd'>Şehir / Senaryo</div><div style='font-size:18px;font-weight:800;color:#f8fafc'>{html.escape(str(summary.get('city', '-')))}</div></div>"
+        f"<div style='padding:6px 12px;border-radius:999px;border:1px solid rgba(56,189,248,.25);background:rgba(56,189,248,.08);font-size:11px;font-weight:800;color:#7dd3fc'>{html.escape(source_label.upper())}</div>"
+        "</div>"
+        f"<div style='font-size:12px;color:#94a3b8'>Afet türü: <b>{html.escape(str(summary.get('profile_name', '-')))}</b> | Ölçek: <b>{html.escape(str(summary.get('disaster_scale', '-')))}</b> | Güven: <b>{html.escape(str(summary.get('confidence', '-')))}</b></div>"
+        f"<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px'>{card_html}</div>"
+        f"{warn_html}"
+        "<div style='display:grid;grid-template-columns:1fr 1fr;gap:14px'>"
+        "<div style='padding:14px;border:1px solid rgba(56,189,248,.15);border-radius:10px;background:rgba(2,6,14,.42)'>"
+        "<div style='font-size:12px;font-weight:800;color:#93c5fd;margin-bottom:8px'>Öncelikli Etki Alanları</div>"
+        f"<ul style='margin:0;padding-left:18px;line-height:1.6;color:#e5e7eb'>{region_items}</ul>"
+        "</div>"
+        "<div style='padding:14px;border:1px solid rgba(56,189,248,.15);border-radius:10px;background:rgba(2,6,14,.42)'>"
+        "<div style='font-size:12px;font-weight:800;color:#93c5fd;margin-bottom:8px'>Operasyon Notları</div>"
+        f"<ul style='margin:0;padding-left:18px;line-height:1.6;color:#e5e7eb'>{note_items}</ul>"
+        "</div>"
+        "</div>"
+        "<div style='padding:12px 14px;border-radius:10px;background:rgba(15,23,42,.7);border:1px solid rgba(148,163,184,.18)'>"
+        "<div style='font-size:11px;font-weight:800;color:#93c5fd;margin-bottom:4px'>Saha Snapshot</div>"
+        f"<div style='font-size:12px;color:#cbd5e1'>{html.escape(snapshot_line)}</div>"
+        "</div>"
+        f"{advisory_block}"
+        "</div>"
+    )
+
+
+def _build_gemini_prompt(summary: Dict[str, object]) -> str:
+    regions = ", ".join(summary.get("affected_regions", []))
+    notes = "; ".join(summary.get("operational_notes", []))
+    snapshot = summary.get("field_snapshot", {})
+    return (
+        "Türkçe yaz. Aşağıdaki afet senaryosu için 5 kısa bölüm halinde operasyon değerlendirmesi üret: "
+        "Durum Özeti, Risk Alanları, İlk 6 Saat, İlk 24 Saat, Lojistik Notlar. "
+        "Abartısız, net ve karar verdirici ol. HTML veya markdown kullanma; düz metin yaz.\n\n"
+        f"Şehir: {summary.get('city')}\n"
+        f"Afet Türü: {summary.get('profile_name')}\n"
+        f"Afet Ölçeği: {summary.get('disaster_scale')}\n"
+        f"Tahmini Nüfus: {summary.get('population_estimate')}\n"
+        f"Tahmini Can Kaybı: {summary.get('casualty_estimate')}\n"
+        f"Tahmini Yaralı: {summary.get('injury_estimate')}\n"
+        f"Etkilenebilecek Alanlar: {regions}\n"
+        f"Saha Snapshot: kayıt={snapshot.get('record_count', 0)}, kırmızı={snapshot.get('red', 0)}, "
+        f"sarı={snapshot.get('yellow', 0)}, yeşil={snapshot.get('green', 0)}, siyah={snapshot.get('black', 0)}\n"
+        f"Operasyon Notları: {notes}"
+    )
+
+
+def _parse_timestamp(value: str) -> float:
+    txt = str(value or "").strip()
+    if not txt:
+        return 0.0
+    for parser in ("%Y-%m-%d %H:%M:%S",):
+        try:
+            return datetime.strptime(txt, parser).timestamp()
+        except Exception:
+            pass
+    try:
+        return datetime.fromisoformat(txt.replace("Z", "+00:00")).timestamp()
+    except Exception:
+        return 0.0
+
+
+def _transfer_summary_from_records(records: List[Dict]) -> Dict[str, int]:
+    summary: Dict[str, int] = {}
+    for rec in records:
+        status = str(rec.get("TRANSFER DURUMU", "Sahada") or "Sahada").strip() or "Sahada"
+        summary[status] = summary.get(status, 0) + 1
+    return summary
+
+
+def _public_record_view(rec: Dict) -> Dict[str, str]:
+    return {
+        "id": str(rec.get("KİMLİK NO", "")),
+        "name": str(rec.get("AD SOYAD", "Bilinmiyor")),
+        "triage": str(rec.get("TRİYAJ", "Bilinmiyor")),
+        "transfer": str(rec.get("TRANSFER DURUMU", "Sahada")),
+        "team": str(rec.get("EKİP", "")),
+        "event_code": str(rec.get("OLAY KODU", "")),
+        "timestamp": str(rec.get("SON GÜNCELLEME") or rec.get("TARİH/SAAT", "")),
+    }
+
+
+def _message_public_view(msg: Dict) -> Dict[str, str]:
+    return {
+        "id": str(msg.get("id", "")),
+        "timestamp": str(msg.get("timestamp", "")),
+        "sender": str(msg.get("sender", "")),
+        "person_id": str(msg.get("person_id", "")),
+        "person_name": str(msg.get("person_name", "")),
+        "message": str(msg.get("message", "")),
+        "source": str(msg.get("source", "")),
+    }
+
+
+def _build_local_afad_snapshot(node_id: str = "", node_label: str = "") -> Dict[str, object]:
+    records = state.data_mgr.get_all()
+    stats = state.data_mgr.stats()
+    health_info = {
+        "simulate": state.simulate,
+        "hardware": {
+            "rfid": not state.rfid.simulate,
+            "gps": not state.gps.simulate,
+            "fingerprint": not state.fp.simulate,
+            "buzzer": not state.buzzer.simulate,
+        },
+    }
+    recent_records = sorted(
+        [_public_record_view(rec) for rec in records],
+        key=lambda item: _parse_timestamp(item.get("timestamp", "")),
+        reverse=True,
+    )[:25]
+    recent_messages = sorted(
+        [_message_public_view(m) for m in state.msg_mgr.list(limit=300)],
+        key=lambda item: _parse_timestamp(item.get("timestamp", "")),
+        reverse=True,
+    )[:40]
+    family_messages = [m for m in recent_messages if m.get("source") == "family-portal"][:20]
+    gps = state.gps.get()
+    return {
+        "node_id": (node_id or DEFAULT_NODE_ID).strip() or DEFAULT_NODE_ID,
+        "node_label": (node_label or DEFAULT_NODE_LABEL).strip() or DEFAULT_NODE_LABEL,
+        "pushed_at": datetime.now().isoformat(),
+        "health": health_info,
+        "stats": stats,
+        "gps": gps,
+        "transfer_summary": _transfer_summary_from_records(records),
+        "recent_records": recent_records,
+        "recent_messages": recent_messages,
+        "family_messages": family_messages,
+    }
+
+
+def _get_afad_shared_key() -> str:
+    env_key = os.environ.get("TAMGA_AFAD_SHARED_KEY", "").strip()
+    if env_key:
+        return env_key
+    if state and getattr(state, "sec_mgr", None):
+        cfg_key = state.sec_mgr.data.get("afad_shared_key", "")
+        if isinstance(cfg_key, str):
+            return cfg_key.strip()
+    return ""
+
+
 def _detect_record_conflicts(existing_records: List[Dict], body: "RecordIn") -> List[Dict[str, str]]:
     fp = _norm_text(body.parmak_izi_id)
     rfid = _norm_text(body.rfid_uid)
@@ -459,10 +1201,14 @@ class GPSManager:
                 self.simulate = True
 
     def start(self):
+        if self._running:
+            return
         self._running = True
         threading.Thread(target=self._loop, daemon=True).start()
 
     def stop(self):
+        if not self._running:
+            return
         self._running = False
         if self.serial_port:
             self.serial_port.close()
@@ -669,6 +1415,178 @@ class DataManager:
             return {"total": total, "triage": triage, "gender": gender}
 
 
+class MessageManager:
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._messages: List[Dict] = []
+        self._load()
+
+    def _load(self):
+        if not MESSAGES_FILE.exists():
+            self._messages = []
+            return
+        try:
+            raw = json.loads(MESSAGES_FILE.read_text(encoding="utf-8"))
+            self._messages = raw if isinstance(raw, list) else []
+        except Exception:
+            self._messages = []
+
+    def _save(self):
+        try:
+            MESSAGES_FILE.write_text(
+                json.dumps(self._messages, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+        except Exception as e:
+            log.warning(f"Mesajlar kaydedilemedi: {e}")
+
+    def list(self, person_id: str = "", limit: int = 200) -> List[Dict]:
+        with self._lock:
+            items = list(self._messages)
+        pid = (person_id or "").strip().lower()
+        if pid:
+            items = [m for m in items if pid in str(m.get("person_id", "")).lower()]
+        lim = max(1, min(1000, int(limit)))
+        return items[-lim:]
+
+    def add(self, msg: Dict) -> Dict:
+        with self._lock:
+            self._messages.append(msg)
+            if len(self._messages) > 5000:
+                self._messages = self._messages[-5000:]
+            self._save()
+        return msg
+
+
+class AfadHubManager:
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._nodes: Dict[str, Dict] = {}
+        self._load()
+
+    def _load(self):
+        if not AFAD_NODES_FILE.exists():
+            self._nodes = {}
+            return
+        try:
+            raw = json.loads(AFAD_NODES_FILE.read_text(encoding="utf-8"))
+            if isinstance(raw, dict):
+                self._nodes = raw
+            else:
+                self._nodes = {}
+        except Exception:
+            self._nodes = {}
+
+    def _save(self):
+        AFAD_NODES_FILE.parent.mkdir(parents=True, exist_ok=True)
+        AFAD_NODES_FILE.write_text(
+            json.dumps(self._nodes, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+    def ingest(self, snapshot: Dict) -> Dict:
+        node_id = str(snapshot.get("node_id", "")).strip()
+        if not node_id:
+            raise ValueError("node_id zorunlu")
+        entry = {
+            "node_id": node_id,
+            "node_label": str(snapshot.get("node_label", node_id))[:120],
+            "updated_at": datetime.now().isoformat(),
+            "snapshot": snapshot,
+        }
+        with self._lock:
+            self._nodes[node_id] = entry
+            self._save()
+        return entry
+
+    def list_nodes(self) -> List[Dict]:
+        with self._lock:
+            items = [dict(v) for v in self._nodes.values()]
+        for item in items:
+            updated_at = item.get("updated_at", "")
+            age_seconds = max(0, int(time.time() - _parse_timestamp(updated_at)))
+            item["age_seconds"] = age_seconds
+            item["status"] = "online" if age_seconds <= 120 else "stale" if age_seconds <= 600 else "offline"
+        items.sort(key=lambda item: item.get("updated_at", ""), reverse=True)
+        return items
+
+    def dashboard(self, local_snapshot: Optional[Dict] = None) -> Dict:
+        nodes = self.list_nodes()
+        if local_snapshot:
+            local_node_id = local_snapshot.get("node_id", DEFAULT_NODE_ID)
+            if not any(n.get("node_id") == local_node_id for n in nodes):
+                nodes.insert(0, {
+                    "node_id": local_node_id,
+                    "node_label": local_snapshot.get("node_label", DEFAULT_NODE_LABEL),
+                    "updated_at": local_snapshot.get("pushed_at", datetime.now().isoformat()),
+                    "age_seconds": 0,
+                    "status": "online",
+                    "snapshot": local_snapshot,
+                })
+
+        summary = {
+            "node_count": len(nodes),
+            "online_nodes": 0,
+            "total_records": 0,
+            "critical_total": 0,
+            "triage": {"KIRMIZI": 0, "SARI": 0, "YEŞİL": 0, "SİYAH": 0},
+            "transfer": {},
+        }
+        recent_records: List[Dict] = []
+        recent_messages: List[Dict] = []
+        family_messages: List[Dict] = []
+        node_rows: List[Dict] = []
+
+        for node in nodes:
+            snapshot = node.get("snapshot", {}) or {}
+            stats = snapshot.get("stats", {}) if isinstance(snapshot, dict) else {}
+            tri = stats.get("triage", {}) if isinstance(stats, dict) else {}
+            transfer_summary = snapshot.get("transfer_summary", {}) if isinstance(snapshot, dict) else {}
+            record_total = int(stats.get("total", 0)) if isinstance(stats, dict) else 0
+            red = int(tri.get("KIRMIZI", 0))
+            black = int(tri.get("SİYAH", tri.get("SIYAH", 0)))
+            summary["online_nodes"] += 1 if node.get("status") == "online" else 0
+            summary["total_records"] += record_total
+            summary["critical_total"] += red + black
+            for key in ("KIRMIZI", "SARI", "YEŞİL", "SİYAH"):
+                summary["triage"][key] += int(tri.get(key, 0))
+            for key, value in transfer_summary.items():
+                summary["transfer"][key] = summary["transfer"].get(key, 0) + int(value)
+
+            node_rows.append({
+                "node_id": node.get("node_id", ""),
+                "node_label": node.get("node_label", ""),
+                "updated_at": node.get("updated_at", ""),
+                "status": node.get("status", "offline"),
+                "age_seconds": node.get("age_seconds", 0),
+                "simulate": bool(snapshot.get("health", {}).get("simulate", False)),
+                "gps": snapshot.get("gps", {}),
+                "record_total": record_total,
+                "critical_total": red + black,
+                "transfer_summary": transfer_summary,
+            })
+
+            for rec in snapshot.get("recent_records", [])[:12]:
+                recent_records.append({**rec, "node_id": node.get("node_id", ""), "node_label": node.get("node_label", "")})
+            for msg in snapshot.get("recent_messages", [])[:12]:
+                recent_messages.append({**msg, "node_id": node.get("node_id", ""), "node_label": node.get("node_label", "")})
+            for msg in snapshot.get("family_messages", [])[:12]:
+                family_messages.append({**msg, "node_id": node.get("node_id", ""), "node_label": node.get("node_label", "")})
+
+        recent_records.sort(key=lambda item: _parse_timestamp(item.get("timestamp", "")), reverse=True)
+        recent_messages.sort(key=lambda item: _parse_timestamp(item.get("timestamp", "")), reverse=True)
+        family_messages.sort(key=lambda item: _parse_timestamp(item.get("timestamp", "")), reverse=True)
+
+        return {
+            "summary": summary,
+            "nodes": node_rows,
+            "recent_records": recent_records[:30],
+            "recent_messages": recent_messages[:30],
+            "family_messages": family_messages[:30],
+            "updated_at": datetime.now().isoformat(),
+        }
+
+
 # ─────────────────────────────────────────────
 # BÖLÜM 4 — Güvenlik Yöneticisi
 # ─────────────────────────────────────────────
@@ -683,11 +1601,12 @@ class SecurityManager:
     ]
 
     ROLE_PERMISSIONS = {
-        "admin":  {"view": True, "delete": True, "export": True, "package": True, "change_password": True, "transfer_update": True, "bulk_qr": True, "prefetch_map": True},
-        "doctor": {"view": True, "delete": False, "export": True, "package": True, "change_password": False, "transfer_update": True, "bulk_qr": True, "prefetch_map": True},
-        "saha":   {"view": True, "delete": False, "export": False, "package": False, "change_password": False, "transfer_update": True, "bulk_qr": True, "prefetch_map": False},
-        "izleme": {"view": True, "delete": False, "export": False, "package": False, "change_password": False, "transfer_update": False, "bulk_qr": False, "prefetch_map": False},
-        "viewer": {"view": True, "delete": False, "export": False, "package": False, "change_password": False, "transfer_update": False, "bulk_qr": False, "prefetch_map": False},
+        "admin":  {"view": True, "delete": True, "export": True, "package": True, "change_password": True, "transfer_update": True, "bulk_qr": True, "prefetch_map": True, "afad_dashboard": True},
+        "doctor": {"view": True, "delete": False, "export": True, "package": True, "change_password": False, "transfer_update": True, "bulk_qr": True, "prefetch_map": True, "afad_dashboard": True},
+        "saha":   {"view": True, "delete": False, "export": False, "package": False, "change_password": False, "transfer_update": True, "bulk_qr": True, "prefetch_map": False, "afad_dashboard": False},
+        "izleme": {"view": True, "delete": False, "export": False, "package": False, "change_password": False, "transfer_update": False, "bulk_qr": False, "prefetch_map": False, "afad_dashboard": True},
+        "viewer": {"view": True, "delete": False, "export": False, "package": False, "change_password": False, "transfer_update": False, "bulk_qr": False, "prefetch_map": False, "afad_dashboard": False},
+        "afad":   {"view": True, "delete": False, "export": True, "package": True, "change_password": False, "transfer_update": True, "bulk_qr": False, "prefetch_map": True, "afad_dashboard": True},
     }
 
     def __init__(self):
@@ -804,6 +1723,68 @@ class MapManager:
                 popup=folium.Popup(popup_html, max_width=250),
                 tooltip=r.get("AD SOYAD", "?"),
             ).add_to(m)
+        return m._repr_html_()
+
+    def generate_family_public(self, matches: List[Dict], query: str = "", center_lat=39.9, center_lon=32.8) -> str:
+        if not FOLIUM_OK:
+            return (
+                "<html><body style='background:#08111c;color:#eef6ff;font-family:Segoe UI,Arial,sans-serif;"
+                "padding:24px'><h3>Harita modülü yüklenemedi</h3><p>Folium kurulu olmadığı için "
+                "yakın portalı haritası oluşturulamadı.</p></body></html>"
+            )
+
+        visible_points = [m for m in matches if m.get("map_lat") is not None and m.get("map_lon") is not None]
+        if visible_points:
+            center_lat = float(visible_points[0]["map_lat"])
+            center_lon = float(visible_points[0]["map_lon"])
+
+        m = folium.Map(location=[center_lat, center_lon], zoom_start=7, tiles="OpenStreetMap")
+        title = html.escape(query or "Yakın Portalı")
+        title_html = (
+            "<div style=\"position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:999999;"
+            "background:rgba(8,17,28,.92);color:#eef6ff;border:1px solid rgba(125,211,252,.25);"
+            "padding:10px 14px;border-radius:12px;font-family:Segoe UI,Arial,sans-serif;"
+            "box-shadow:0 12px 30px rgba(0,0,0,.25)\">"
+            "<div style=\"font-size:11px;font-weight:800;letter-spacing:1px;color:#7dd3fc\">YAKIN EŞLEŞME HARİTASI</div>"
+            f"<div style=\"font-size:14px;font-weight:700;margin-top:4px\">Sorgu: {title}</div>"
+            "<div style=\"font-size:11px;color:#a0b0c2;margin-top:4px\">Noktalar yaklaşık konumu gösterir.</div>"
+            "</div>"
+        )
+        m.get_root().html.add_child(folium.Element(title_html))
+
+        level_colors = {"high": "red", "medium": "orange", "low": "blue"}
+        for item in visible_points:
+            color = level_colors.get(str(item.get("match_level", "low")), "blue")
+            popup_html = (
+                f"<b>{html.escape(str(item.get('name', 'Bilinmiyor')))}</b><br>"
+                f"Eşleşme Güveni: {html.escape(str(item.get('match_label', '-')))} "
+                f"(%{int(item.get('match_score', 0))})<br>"
+                f"Triyaj: {html.escape(str(item.get('triage', '-')))}<br>"
+                f"Transfer: {html.escape(str(item.get('transfer', '-')))}<br>"
+                f"Olay: {html.escape(str(item.get('event_code', '-')))}<br>"
+                f"Yaklaşık konum: {html.escape(str(item.get('approx_location', '-')))}<br>"
+                f"Son güncelleme: {html.escape(str(item.get('timestamp', '-')))}"
+            )
+            folium.CircleMarker(
+                location=[float(item["map_lat"]), float(item["map_lon"])],
+                radius=9,
+                color=color,
+                fill=True,
+                fill_opacity=0.78,
+                popup=folium.Popup(popup_html, max_width=260),
+                tooltip=str(item.get("name", "?")),
+            ).add_to(m)
+
+        if not visible_points:
+            folium.Marker(
+                [center_lat, center_lon],
+                popup=folium.Popup(
+                    "Bu sorgu için paylaşılabilir konum verisi bulunamadı. Eşleşme kartlarını inceleyin.",
+                    max_width=260,
+                ),
+                tooltip="Konum verisi yok",
+            ).add_to(m)
+
         return m._repr_html_()
 
 
@@ -955,7 +1936,10 @@ class SyncManager:
 class AppState:
     def __init__(self, simulate: bool):
         self.simulate = simulate
+        self._started = False
         self.data_mgr  = DataManager()
+        self.msg_mgr   = MessageManager()
+        self.afad_hub  = AfadHubManager()
         self.sec_mgr   = SecurityManager()
         self.map_mgr   = MapManager()
         self.sync_mgr  = SyncManager(ORANGE_PI_URL)
@@ -964,7 +1948,7 @@ class AppState:
         self.gps       = GPSManager(simulate)
         self.rfid      = RFIDManager(simulate)
         self.fp        = FingerprintManager(simulate)
-        self.sessions: Dict[str, bool] = {}   # token → authenticated
+        self.sessions: Dict[str, Dict[str, object]] = {}
         self._prefetch_lock = threading.Lock()
         self._prefetch_status: Dict[str, object] = {
             "running": False,
@@ -982,12 +1966,24 @@ class AppState:
         }
 
     def start(self):
+        if self._started:
+            return
+        self._started = True
         self.gps.start()
-        # Türkiye tile'larını arka planda indir (internet varsa)
-        threading.Thread(target=self.tile_mgr.prefetch_turkey, kwargs={"min_zoom": 4, "max_zoom": 8, "include_sat": False}, daemon=True).start()
+        auto_prefetch = os.environ.get("TAMGA_AUTO_PREFETCH")
+        should_prefetch = _env_truthy(auto_prefetch) if auto_prefetch is not None else (not self.simulate)
+        if should_prefetch:
+            threading.Thread(
+                target=self.tile_mgr.prefetch_turkey,
+                kwargs={"min_zoom": 4, "max_zoom": 8, "include_sat": False},
+                daemon=True,
+            ).start()
         log.info(f"TAMGA backend başlatıldı (simulate={self.simulate})")
 
     def stop(self):
+        if not self._started:
+            return
+        self._started = False
         self.gps.stop()
         self.buzzer.cleanup()
 
@@ -1079,7 +2075,79 @@ class WSManager:
 # BÖLÜM 9 — FastAPI Uygulaması
 # ─────────────────────────────────────────────
 
-app = FastAPI(title="TAMGA-ADKS API v2", version="2.0.0")
+state: Optional[AppState] = None
+ws_mgr = WSManager()
+
+
+def _should_simulate(force_simulate: bool = False) -> bool:
+    if force_simulate:
+        return True
+    env = os.environ.get("TAMGA_SIMULATE")
+    if env is not None:
+        return _env_truthy(env)
+    try:
+        import RPi.GPIO  # noqa
+        return False
+    except ImportError:
+        return True
+
+
+def _ensure_state(force_simulate: bool = False) -> AppState:
+    global state
+    if state is None:
+        state = AppState(simulate=_should_simulate(force_simulate))
+    return state
+
+
+def _issue_session_token(username: str, role: str, scope: str = "default", ttl_seconds: int = 8 * 3600) -> str:
+    token = f"tok_{scope}_{''.join(random.choices(string.ascii_letters + string.digits, k=40))}"
+    expires_at = time.time() + max(300, int(ttl_seconds))
+    state.sessions[token] = {
+        "username": username,
+        "role": role,
+        "scope": scope,
+        "expires_at": expires_at,
+    }
+    return token
+
+
+def _get_session(token: str, scope: Optional[str] = None) -> Optional[Dict[str, object]]:
+    raw = state.sessions.get(token)
+    if not raw:
+        return None
+    if float(raw.get("expires_at", 0)) < time.time():
+        state.sessions.pop(token, None)
+        return None
+    if scope and raw.get("scope") != scope:
+        return None
+    return raw
+
+
+def _extract_bearer_token(request: Request) -> str:
+    auth = (request.headers.get("authorization", "") or "").strip()
+    if auth.lower().startswith("bearer "):
+        return auth[7:].strip()
+    return (request.headers.get("x-afad-token", "") or "").strip()
+
+
+def _require_afad_session(request: Request) -> Dict[str, object]:
+    token = _extract_bearer_token(request)
+    session = _get_session(token, scope="afad")
+    if not session:
+        raise HTTPException(401, "AFAD oturumu geçersiz")
+    perms = state.sec_mgr.role_permissions(str(session.get("role", "")))
+    if not perms.get("afad_dashboard"):
+        raise HTTPException(403, "AFAD panel yetkisi yok")
+    return session
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    app_state = _ensure_state()
+    app_state.start()
+    yield
+    app_state.stop()
+
+app = FastAPI(title="TAMGA-ADKS API v2", version="2.0.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -1087,9 +2155,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
-
-state: Optional[AppState] = None
-ws_mgr = WSManager()
 
 
 # ─────────────────────────────────────────────
@@ -1103,6 +2168,9 @@ class RecordIn(BaseModel):
     kilo:          str = ""
     goz:           str = ""
     sac:           str = ""
+    kan_grubu:     str = ""
+    ayirt_edici_iz_durumu: str = "Yok"
+    ayirt_edici_iz_detay: str = ""
     triyaj:        str = ""
     bilincl:       str = "Açık"
     dna:           str = "Alınmadı"
@@ -1118,7 +2186,29 @@ class RecordIn(BaseModel):
     face_photo_b64: str = ""
     transfer_durumu: str = "Sahada"
 
+
+class MessageIn(BaseModel):
+    sender: str = ""
+    person_id: str = ""
+    person_name: str = ""
+    message: str
+    source: str = "main"
+
+
+class FamilyContactIn(BaseModel):
+    contact_name: str = ""
+    contact_phone: str = ""
+    person_query: str = ""
+    person_id: str = ""
+    message: str
+
+
 class LoginIn(BaseModel):
+    username: str
+    password: str
+
+
+class AfadLoginIn(BaseModel):
     username: str
     password: str
 
@@ -1137,6 +2227,12 @@ class BuzzerIn(BaseModel):
 class RFIDWriteIn(BaseModel):
     text: str
 
+class AiQueryRequest(BaseModel):
+    sehir: str
+    afet_turu: str
+    afet_olcegi: str
+
+
 
 class VoiceAliasUpsertIn(BaseModel):
     profile: str = "default"
@@ -1154,6 +2250,19 @@ class MapPrefetchIn(BaseModel):
     include_sat: bool = True
 
 
+class AfadIngestIn(BaseModel):
+    node_id: str
+    node_label: str = ""
+    pushed_at: str = ""
+    health: Dict = Field(default_factory=dict)
+    stats: Dict = Field(default_factory=dict)
+    gps: Dict = Field(default_factory=dict)
+    transfer_summary: Dict[str, int] = Field(default_factory=dict)
+    recent_records: List[Dict] = Field(default_factory=list)
+    recent_messages: List[Dict] = Field(default_factory=list)
+    family_messages: List[Dict] = Field(default_factory=list)
+
+
 # ─────────────────────────────────────────────
 # BÖLÜM 11 — REST Endpoint'leri
 # ─────────────────────────────────────────────
@@ -1163,11 +2272,38 @@ def _gen_id() -> str:
     return f"TR-{suffix}"
 
 
+def _gen_msg_id() -> str:
+    suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    return f"MSG-{int(time.time() * 1000)}-{suffix}"
+
+
 @app.get("/", response_class=HTMLResponse)
 async def root():
     if TEMPLATE_FILE.exists():
         return HTMLResponse(TEMPLATE_FILE.read_text(encoding="utf-8"))
     return HTMLResponse("<h1>Frontend bulunamadı</h1><p>templates/tamga.html oluşturun.</p>")
+
+
+@app.get("/messages", response_class=HTMLResponse)
+async def messages_ui():
+    if MESSAGES_TEMPLATE_FILE.exists():
+        return HTMLResponse(MESSAGES_TEMPLATE_FILE.read_text(encoding="utf-8"))
+    return HTMLResponse("<h1>Mesajlaşma arayüzü bulunamadı</h1><p>templates/messages.html oluşturun.</p>")
+
+
+@app.get("/afad", response_class=HTMLResponse)
+async def afad_ui():
+    if AFAD_TEMPLATE_FILE.exists():
+        return HTMLResponse(AFAD_TEMPLATE_FILE.read_text(encoding="utf-8"))
+    return HTMLResponse("<h1>AFAD paneli bulunamadı</h1><p>templates/afad.html oluşturun.</p>")
+
+
+@app.get("/yakin", response_class=HTMLResponse)
+@app.get("/aile", response_class=HTMLResponse)
+async def family_ui():
+    if FAMILY_TEMPLATE_FILE.exists():
+        return HTMLResponse(FAMILY_TEMPLATE_FILE.read_text(encoding="utf-8"))
+    return HTMLResponse("<h1>Yakın portalı bulunamadı</h1><p>templates/yakin.html oluşturun.</p>")
 
 
 @app.get("/api/health")
@@ -1209,6 +2345,9 @@ async def create_record(body: RecordIn):
         "KİLO":            body.kilo,
         "GÖZ":             body.goz,
         "SAÇ":             body.sac,
+        "KAN GRUBU":       body.kan_grubu,
+        "AYIRT EDİCİ İZ DURUMU": body.ayirt_edici_iz_durumu or "Yok",
+        "AYIRT EDİCİ İZ AÇIKLAMA": body.ayirt_edici_iz_detay,
         "TRİYAJ":          body.triyaj,
         "BİLİNÇ":          body.bilincl,
         "DNA":             body.dna,
@@ -1251,6 +2390,140 @@ async def search_records(q: str = ""):
 @app.get("/api/stats")
 async def stats():
     return state.data_mgr.stats()
+
+
+@app.get("/api/messages")
+async def get_messages(person_id: str = "", limit: int = 200):
+    return state.msg_mgr.list(person_id=person_id, limit=limit)
+
+
+@app.get("/api/family/search")
+async def family_search(q: str = ""):
+    payload = _build_family_match_payload(q, limit=12)
+    return payload.get("matches", [])
+
+
+@app.get("/api/family/match")
+async def family_match(q: str = ""):
+    return _build_family_match_payload(q, limit=12)
+
+
+@app.get("/api/family/map")
+async def family_map(q: str = ""):
+    payload = _build_family_match_payload(q, limit=24)
+    gps = state.gps.get()
+    html_map = state.map_mgr.generate_family_public(
+        list(payload.get("matches", [])),
+        query=str(payload.get("query", "")),
+        center_lat=gps.get("lat", 39.9),
+        center_lon=gps.get("lon", 32.8),
+    )
+    return HTMLResponse(html_map)
+
+
+@app.post("/api/family/contact")
+async def family_contact(body: FamilyContactIn):
+    message_text = (body.message or "").strip()
+    if not message_text:
+        raise HTTPException(400, "Mesaj boş olamaz")
+    contact_name = (body.contact_name or "Yakın").strip()[:60]
+    contact_phone = (body.contact_phone or "").strip()[:30]
+    person_id = (body.person_id or "").strip()[:64]
+    person_query = (body.person_query or "").strip()[:120]
+    msg = {
+        "id": _gen_msg_id(),
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "sender": f"Yakın: {contact_name}",
+        "person_id": person_id,
+        "person_name": person_query,
+        "message": f"{message_text[:450]}{' | Tel: ' + contact_phone if contact_phone else ''}",
+        "source": "family-portal",
+    }
+    state.msg_mgr.add(msg)
+    await ws_mgr.broadcast({"type": "message_added", "data": msg})
+    return {"success": True, "message_id": msg["id"]}
+
+
+@app.post("/api/messages")
+async def create_message(body: MessageIn):
+    txt = (body.message or "").strip()
+    if not txt:
+        raise HTTPException(400, "Mesaj boş olamaz")
+    msg = {
+        "id": _gen_msg_id(),
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "sender": (body.sender or "Operatör").strip()[:60],
+        "person_id": (body.person_id or "").strip()[:64],
+        "person_name": (body.person_name or "").strip()[:120],
+        "message": txt[:500],
+        "source": (body.source or "main").strip()[:30],
+    }
+    state.msg_mgr.add(msg)
+    await ws_mgr.broadcast({"type": "message_added", "data": msg})
+    return msg
+
+
+@app.get("/api/afad/local-snapshot")
+async def afad_local_snapshot(node_id: str = "", node_label: str = ""):
+    return _build_local_afad_snapshot(node_id=node_id, node_label=node_label)
+
+
+@app.post("/api/afad/auth/login")
+async def afad_auth_login(body: AfadLoginIn):
+    role = state.sec_mgr.verify_user(body.username, body.password)
+    if not role:
+        return JSONResponse({"success": False, "error": "Kullanıcı adı veya şifre hatalı"}, status_code=401)
+    perms = state.sec_mgr.role_permissions(role)
+    if not perms.get("afad_dashboard"):
+        return JSONResponse({"success": False, "error": "AFAD panel yetkiniz yok"}, status_code=403)
+    token = _issue_session_token(body.username, role, scope="afad", ttl_seconds=12 * 3600)
+    return {
+        "success": True,
+        "token": token,
+        "role": role,
+        "username": body.username,
+        "permissions": perms,
+        "expires_in": 12 * 3600,
+    }
+
+
+@app.get("/api/afad/auth/me")
+async def afad_auth_me(request: Request):
+    session = _require_afad_session(request)
+    role = str(session.get("role", "viewer"))
+    return {
+        "success": True,
+        "username": session.get("username", ""),
+        "role": role,
+        "permissions": state.sec_mgr.role_permissions(role),
+    }
+
+
+@app.post("/api/afad/ingest")
+async def afad_ingest(body: AfadIngestIn, request: Request):
+    shared_key = _get_afad_shared_key()
+    if not shared_key:
+        raise HTTPException(503, "TAMGA_AFAD_SHARED_KEY tanımlı değil")
+    provided = (
+        request.headers.get(AFAD_BRIDGE_HEADER, "")
+        or request.headers.get(AFAD_BRIDGE_HEADER.upper(), "")
+        or request.headers.get("x-tamga-afad-key", "")
+    ).strip()
+    if provided != shared_key:
+        raise HTTPException(401, "Bridge anahtarı hatalı")
+    entry = state.afad_hub.ingest(body.model_dump())
+    return {
+        "success": True,
+        "node_id": entry.get("node_id", ""),
+        "updated_at": entry.get("updated_at", ""),
+    }
+
+
+@app.get("/api/afad/dashboard")
+async def afad_dashboard(request: Request, include_local: bool = True):
+    _require_afad_session(request)
+    local_snapshot = _build_local_afad_snapshot() if include_local else None
+    return state.afad_hub.dashboard(local_snapshot=local_snapshot)
 
 
 @app.patch("/api/records/{kimlik_no}/transfer")
@@ -1308,6 +2581,71 @@ async def get_map():
     gps = state.gps.get()
     html = state.map_mgr.generate(records, gps["lat"], gps["lon"])
     return HTMLResponse(html)
+
+@app.post("/api/ai_query")
+async def ai_query(body: AiQueryRequest):
+    if not body.sehir.strip():
+        raise HTTPException(400, "Şehir adı boş olamaz.")
+    if not body.afet_turu.strip():
+        raise HTTPException(400, "Afet türü boş olamaz.")
+    if not body.afet_olcegi.strip():
+        raise HTTPException(400, "Afet ölçeği boş olamaz.")
+    stats = state.data_mgr.stats()
+    summary = _estimate_disaster_summary(
+        city_name=body.sehir,
+        disaster_type=body.afet_turu,
+        disaster_scale=body.afet_olcegi,
+        stats=stats,
+    )
+
+    warnings: List[str] = []
+    if summary.get("field_snapshot", {}).get("record_count", 0) < 10:
+        warnings.append("Sahadan toplanan kayıt sayısı 10'un altında; tahmin güveni sınırlıdır.")
+    if not summary.get("population_matched"):
+        warnings.append("Şehir nüfusu yerel veri tabanında bulunamadı; genel şehir katsayısı kullanıldı.")
+
+    source = "offline"
+    source_label = "Yerel tahmin motoru"
+    advisory_html = ""
+
+    if not GENAI_OK:
+        warnings.append("google-genai paketi bulunamadığı için çevrimdışı analiz kullanıldı.")
+    elif not GEMINI_API_KEY:
+        warnings.append("GEMINI_API_KEY tanımlı olmadığı için çevrimdışı analiz kullanıldı.")
+    else:
+        try:
+            client = genai.Client(api_key=GEMINI_API_KEY)
+            response = client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=_build_gemini_prompt(summary),
+            )
+            response_text = (getattr(response, "text", "") or "").strip()
+            if response_text:
+                source = "gemini"
+                source_label = f"Gemini + yerel tahmin ({GEMINI_MODEL})"
+                advisory_html = _safe_text_to_html(response_text)
+            else:
+                warnings.append("Gemini boş yanıt verdi; çevrimdışı analiz kullanıldı.")
+        except Exception as e:
+            log.warning(f"Gemini analizine erişilemedi, offline moda geçiliyor: {e}")
+            warnings.append(f"Gemini erişilemedi; çevrimdışı analiz kullanıldı. ({str(e)[:120]})")
+
+    result_html = _render_ai_result_html(
+        summary=summary,
+        source_label=source_label,
+        narrative_html=advisory_html,
+        warnings=warnings,
+    )
+    return {
+        "success": True,
+        "source": source,
+        "source_label": source_label,
+        "summary": summary,
+        "warnings": warnings,
+        "result": result_html,
+        "result_html": result_html,
+    }
+
 
 
 @app.get("/api/qr/{kimlik_no}")
@@ -1617,18 +2955,6 @@ async def websocket_endpoint(ws: WebSocket):
 # BÖLÜM 13 — Lifecycle & Ana Giriş
 # ─────────────────────────────────────────────
 
-@app.on_event("startup")
-async def on_startup():
-    if state:
-        state.start()
-
-
-@app.on_event("shutdown")
-async def on_shutdown():
-    if state:
-        state.stop()
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="TAMGA-ADKS Backend v2.0")
     parser.add_argument("--simulate", action="store_true", help="Donanım simülasyon modu")
@@ -1636,15 +2962,11 @@ if __name__ == "__main__":
     parser.add_argument("--host",     type=str, default="0.0.0.0", help="Dinlenecek host")
     args = parser.parse_args()
 
-    # GPIO olmayan sistemlerde otomatik simülasyon
-    if not args.simulate:
-        try:
-            import RPi.GPIO  # noqa
-        except ImportError:
-            log.warning("RPi.GPIO bulunamadı → simülasyon moduna geçiliyor")
-            args.simulate = True
+    args.simulate = _should_simulate(args.simulate)
+    if args.simulate:
+        log.warning("RPi.GPIO bulunamadı veya simülasyon istendi → simülasyon modu aktif")
 
-    state = AppState(simulate=args.simulate)
+    state = _ensure_state(args.simulate)
 
     import uvicorn
     mode_str = "SİMÜLASYON" if args.simulate else "DONANIM"

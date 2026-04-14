@@ -1,0 +1,31 @@
+[Unit]
+Description=TAMGA-ADKS Kiosk Display
+After=tamga-adks.service display-manager.service graphical.target
+Requires=tamga-adks.service
+Wants=display-manager.service
+
+[Service]
+Type=simple
+User=adks
+Group=adks
+WorkingDirectory=/opt/tamga-adks
+
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/adks/.Xauthority
+Environment=HOME=/home/adks
+Environment=XDG_RUNTIME_DIR=/tmp/tamga-runtime
+
+ExecStartPre=/bin/mkdir -p /tmp/tamga-runtime
+ExecStartPre=/bin/chown adks:adks /tmp/tamga-runtime
+ExecStartPre=/bin/chmod 700 /tmp/tamga-runtime
+ExecStartPre=/bin/sh -c "until curl -sf http://127.0.0.1:8000/api/health >/dev/null 2>&1; do sleep 1; done"
+ExecStart=/opt/tamga-adks/kiosk.sh
+Restart=always
+RestartSec=3s
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tamga-kiosk
+
+[Install]
+WantedBy=graphical.target

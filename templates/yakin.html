@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAMGA · Yakın Bilgi Portalı</title>
+<style>
+  :root{
+    --bg:#07111b;
+    --bg2:#0b1726;
+    --card:rgba(16,38,62,.9);
+    --card2:rgba(12,26,42,.92);
+    --line:rgba(125,211,252,.16);
+    --line-strong:rgba(125,211,252,.28);
+    --txt:#eef6ff;
+    --mut:#9fb4c7;
+    --acc:#7dd3fc;
+    --ok:#34d399;
+    --warn:#fbbf24;
+    --err:#f87171;
+  }
+  *{box-sizing:border-box}
+  html,body{
+    margin:0;
+    background:
+      radial-gradient(900px 420px at 0% 0%,rgba(14,165,233,.10),transparent 60%),
+      radial-gradient(760px 360px at 100% 100%,rgba(251,191,36,.08),transparent 60%),
+      linear-gradient(180deg,#08111c,#0a1624);
+    color:var(--txt);
+    font-family:Segoe UI,system-ui,sans-serif;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:18px}
+  .hero,.card{
+    background:var(--card);border:1px solid var(--line);border-radius:22px;
+    box-shadow:0 24px 70px rgba(0,0,0,.18)
+  }
+  .hero{padding:24px;margin-bottom:14px}
+  .hero-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand img{display:block;object-fit:contain}
+  .brand img:first-child{height:54px}
+  .brand img:last-child{height:44px}
+  .ttl{font-size:29px;font-weight:900}
+  .sub{font-size:13px;color:var(--mut);line-height:1.75;margin-top:10px;max-width:920px}
+  .safe{
+    padding:10px 14px;border-radius:999px;border:1px solid rgba(52,211,153,.2);
+    background:rgba(52,211,153,.08);font-size:12px;color:#d1fae5;font-weight:700
+  }
+  .hero-grid{
+    margin-top:14px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;
+  }
+  .hero-pill{
+    background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;
+    padding:12px 14px;
+  }
+  .hero-pill span{
+    display:block;font-size:10px;letter-spacing:1px;color:var(--mut);text-transform:uppercase;
+  }
+  .hero-pill strong{
+    display:block;margin-top:4px;font-size:14px;color:#f8fbff;
+  }
+  .card{padding:18px;margin-bottom:14px}
+  .st{font-size:12px;font-weight:900;letter-spacing:1px;color:var(--acc);text-transform:uppercase;margin-bottom:12px}
+  .subline{font-size:12px;color:var(--mut);line-height:1.6;margin-bottom:12px}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .inp,.tx,.btn,.sel{
+    border-radius:14px;border:1px solid var(--line);background:var(--bg2);color:var(--txt);font-size:14px
+  }
+  .inp,.tx,.sel{padding:13px 14px;outline:none;width:100%}
+  .inp:focus,.tx:focus,.sel:focus{border-color:rgba(125,211,252,.45);box-shadow:0 0 0 3px rgba(125,211,252,.08)}
+  .sel{appearance:none}
+  .tx{min-height:118px;resize:vertical}
+  .btn{padding:13px 18px;cursor:pointer;background:rgba(125,211,252,.12);font-weight:800}
+  .btn:hover{border-color:var(--acc);color:var(--acc)}
+  .btn-main{background:linear-gradient(135deg,rgba(14,165,233,.26),rgba(59,130,246,.2));min-width:128px}
+  .layout{
+    display:grid;grid-template-columns:minmax(0,1.2fr) minmax(360px,.8fr);gap:14px;align-items:start;
+  }
+  .summary-grid{
+    display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px;
+  }
+  .sum-card{
+    background:var(--card2);border:1px solid rgba(255,255,255,.05);border-radius:18px;padding:14px 15px;
+  }
+  .sum-card span{
+    display:block;font-size:10px;letter-spacing:1px;color:var(--mut);text-transform:uppercase;
+  }
+  .sum-card strong{
+    display:block;margin-top:6px;font-size:23px;font-weight:900;color:#f8fbff;
+  }
+  .sum-card small{display:block;margin-top:5px;font-size:11px;color:var(--mut)}
+  .map-frame{
+    width:100%;height:360px;border:none;border-radius:18px;background:#08111c;
+  }
+  .map-empty{
+    height:360px;border-radius:18px;border:1px dashed rgba(125,211,252,.2);
+    background:rgba(8,17,28,.7);display:flex;align-items:center;justify-content:center;
+    text-align:center;color:var(--mut);padding:24px;line-height:1.7;
+  }
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{
+    display:inline-flex;align-items:center;padding:7px 11px;border-radius:999px;
+    background:rgba(125,211,252,.08);border:1px solid var(--line);font-size:11px;color:#d7ecff;
+  }
+  .results{display:flex;flex-direction:column;gap:12px}
+  .result{
+    padding:16px;border-radius:18px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02);
+  }
+  .result.high{border-color:rgba(52,211,153,.26);box-shadow:0 0 0 1px rgba(52,211,153,.06) inset}
+  .result.medium{border-color:rgba(251,191,36,.24)}
+  .result.low{border-color:rgba(125,211,252,.18)}
+  .result-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .name{font-size:18px;font-weight:800;color:#f8fbff}
+  .meta{font-size:12px;color:var(--mut);line-height:1.7;margin-top:8px}
+  .score-badge{
+    padding:7px 12px;border-radius:999px;border:1px solid var(--line);font-size:12px;font-weight:800;
+  }
+  .score-badge.high{background:rgba(52,211,153,.10);border-color:rgba(52,211,153,.26);color:#d1fae5}
+  .score-badge.medium{background:rgba(251,191,36,.10);border-color:rgba(251,191,36,.26);color:#fde68a}
+  .score-badge.low{background:rgba(125,211,252,.08);border-color:rgba(125,211,252,.2);color:#dbeafe}
+  .score-bar{
+    margin:12px 0 10px;border-radius:999px;height:8px;background:rgba(255,255,255,.05);overflow:hidden;
+  }
+  .score-bar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#38bdf8,#34d399)}
+  .reason-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+  .reason{
+    display:inline-flex;padding:6px 9px;border-radius:999px;background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.06);font-size:11px;color:#d7ecff;
+  }
+  .badge{
+    display:inline-flex;padding:10px 13px;border-radius:999px;border:1px solid var(--line);
+    font-size:12px;margin-top:12px;cursor:pointer;background:rgba(125,211,252,.08);font-weight:800
+  }
+  .badge:hover{border-color:var(--acc);color:var(--acc)}
+  .msg{font-size:12px;color:var(--mut);margin-top:10px}
+  .state{font-size:12px;color:var(--mut);margin-top:10px;min-height:18px}
+  @media (max-width:980px){
+    .layout{grid-template-columns:1fr}
+    .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .hero-grid{grid-template-columns:1fr}
+  }
+  @media (max-width:680px){
+    .wrap{padding:12px}
+    .ttl{font-size:23px}
+    .brand img:first-child{height:42px}
+    .brand img:last-child{height:34px}
+    .summary-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="hero-top">
+      <div class="brand">
+        <img src="/static/brand/afad-logo.png" alt="AFAD">
+        <img src="/static/brand/tubitak-logo-white.png" alt="TÜBİTAK">
+      </div>
+      <div class="safe">Yakın erişimi / sınırlı görünüm</div>
+    </div>
+    <div class="ttl">Yakın Bilgi Portalı</div>
+    <div class="sub">
+      Bu arayüz, aile yakınlarının kontrollü erişimi için olası eşleşmeleri güven seviyesine göre sıralar
+      ve yalnızca yaklaşık saha konumunu gösterir. Kişisel veriler sınırlandırılmıştır; kesin doğrulama operatör ekibi tarafından yapılır.
+    </div>
+    <div class="hero-grid">
+      <div class="hero-pill">
+        <span>Özellik 1</span>
+        <strong>Olası Eşleşmeler Motoru</strong>
+      </div>
+      <div class="hero-pill">
+        <span>Özellik 2</span>
+        <strong>Yaklaşık Konum Haritası</strong>
+      </div>
+      <div class="hero-pill">
+        <span>Gizlilik</span>
+        <strong>Kesin koordinat paylaşılmaz</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="st">Eşleşme Sorgusu</div>
+    <div class="subline">Ad soyad, kimlik numarası, ekip kodu veya olay koduyla arama yapabilirsiniz. Sistem olası eşleşmeleri skorlayarak sıralar.</div>
+    <div class="row">
+      <input id="search-q" class="inp" placeholder="Kimlik no, ad soyad, ekip veya olay kodu">
+      <button class="btn btn-main" onclick="runSearch()">Ara</button>
+    </div>
+    <div class="state" id="search-state">Hazır</div>
+  </div>
+
+  <div class="layout">
+    <div>
+      <div class="card">
+        <div class="st">Olası Eşleşmeler</div>
+        <div class="summary-grid" id="summary-grid">
+          <div class="sum-card"><span>Toplam eşleşme</span><strong>0</strong><small>Arama bekleniyor</small></div>
+          <div class="sum-card"><span>Yüksek güven</span><strong>0</strong><small>Doğrudan aday</small></div>
+          <div class="sum-card"><span>Haritada görünen</span><strong>0</strong><small>Yaklaşık konum</small></div>
+          <div class="sum-card"><span>Son güncelleme</span><strong style="font-size:15px">-</strong><small>Saha verisi</small></div>
+        </div>
+        <div class="chips" id="hotspot-box"></div>
+        <div class="results" id="results" style="margin-top:12px">
+          <div class="msg">Sorgu yaptıktan sonra olası eşleşmeler burada listelenir.</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="st">Yaklaşık Konum Haritası</div>
+        <div class="subline">Harita yalnızca paylaşılabilir yaklaşık alanları gösterir. Kırmızı ve turuncu işaretler daha güçlü eşleşmeleri temsil eder.</div>
+        <div id="map-wrap">
+          <div class="map-empty" id="map-empty">Arama yaptıktan sonra eşleşmelerin yaklaşık konumu burada gösterilir.</div>
+          <iframe id="match-map" class="map-frame" style="display:none" title="Yakın eşleşme haritası"></iframe>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="st">Operatöre Mesaj Bırak</div>
+        <input id="contact-name" class="inp" placeholder="Adınız">
+        <div class="row" style="margin-top:8px">
+          <input id="contact-phone" class="inp" placeholder="Telefon (opsiyonel)">
+          <input id="contact-person" class="inp" placeholder="Seçilen kişi / arama bilgisi">
+        </div>
+        <textarea id="contact-msg" class="tx" style="margin-top:8px" placeholder="Yakınınız hakkında iletmek istediğiniz kısa not"></textarea>
+        <div class="row" style="margin-top:8px">
+          <button class="btn" onclick="sendMessage()">Mesaj Gönder</button>
+          <span class="state" id="form-status">Hazır</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = location.origin;
+let selectedPersonId = '';
+let selectedPersonLabel = '';
+
+function esc(v){
+  return String(v ?? '').replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+}
+
+function levelClass(level){
+  return level === 'high' ? 'high' : level === 'medium' ? 'medium' : 'low';
+}
+
+function choosePerson(id, name){
+  selectedPersonId = id || '';
+  selectedPersonLabel = name || id || '';
+  document.getElementById('contact-person').value = id || name || '';
+  document.getElementById('form-status').textContent = `${id || name} seçildi`;
+}
+
+function renderSummary(summary){
+  const safe = summary || {};
+  const latest = safe.latest_update || '-';
+  document.getElementById('summary-grid').innerHTML = `
+    <div class="sum-card"><span>Toplam eşleşme</span><strong>${safe.total_matches || 0}</strong><small>Skorlanmış sonuç</small></div>
+    <div class="sum-card"><span>Yüksek güven</span><strong>${safe.high_confidence || 0}</strong><small>Doğrudan güçlü aday</small></div>
+    <div class="sum-card"><span>Haritada görünen</span><strong>${safe.mapped_count || 0}</strong><small>Yaklaşık konum paylaşılabilir</small></div>
+    <div class="sum-card"><span>Son güncelleme</span><strong style="font-size:15px">${esc(latest)}</strong><small>Saha tarafındaki son kayıt zamanı</small></div>
+  `;
+
+  const hotspots = Array.isArray(safe.hotspots) ? safe.hotspots : [];
+  const box = document.getElementById('hotspot-box');
+  if(!hotspots.length){
+    box.innerHTML = '<span class="chip">Henüz sıcak nokta verisi yok</span>';
+    return;
+  }
+  box.innerHTML = hotspots.map(item=>`<span class="chip">Yoğunluk: ${esc(item.label || '-')} · ${esc(item.count || 0)} kayıt</span>`).join('');
+}
+
+function renderMap(query){
+  const frame = document.getElementById('match-map');
+  const empty = document.getElementById('map-empty');
+  if(!query || query.length < 2){
+    frame.style.display = 'none';
+    frame.src = 'about:blank';
+    empty.style.display = 'flex';
+    empty.textContent = 'Arama yaptıktan sonra eşleşmelerin yaklaşık konumu burada gösterilir.';
+    return;
+  }
+  empty.style.display = 'none';
+  frame.style.display = 'block';
+  frame.src = API + '/api/family/map?q=' + encodeURIComponent(query) + '&t=' + Date.now();
+}
+
+function renderResults(items){
+  const box = document.getElementById('results');
+  if(!items.length){
+    box.innerHTML = '<div class="msg">Bu sorgu için yeterli güven seviyesinde eşleşme bulunamadı.</div>';
+    return;
+  }
+  box.innerHTML = items.map(item=>{
+    const reasons = Array.isArray(item.reasons) ? item.reasons : [];
+    const score = Number(item.match_score || 0);
+    return `
+      <div class="result ${levelClass(item.match_level)}">
+        <div class="result-top">
+          <div>
+            <div class="name">${esc(item.name || 'Bilinmiyor')}</div>
+            <div class="meta">Kimlik: ${esc(item.id || '-')} · Yaklaşık konum: ${esc(item.approx_location || '-')}</div>
+          </div>
+          <div class="score-badge ${levelClass(item.match_level)}">%${score} · ${esc(item.match_label || 'Düşük Güven')}</div>
+        </div>
+        <div class="score-bar"><span style="width:${Math.max(6, Math.min(score,100))}%"></span></div>
+        <div class="reason-row">
+          ${reasons.length ? reasons.map(reason=>`<span class="reason">${esc(reason)}</span>`).join('') : '<span class="reason">Neden bilgisi yok</span>'}
+        </div>
+        <div class="meta">
+          Triyaj: ${esc(item.triage || '-')}<br>
+          Transfer: ${esc(item.transfer || '-')}<br>
+          Ekip: ${esc(item.team || '-')}<br>
+          Olay: ${esc(item.event_code || '-')}<br>
+          Son durum: ${esc(item.timestamp || '-')}
+        </div>
+        <div class="badge" onclick="choosePerson('${esc(item.id || '')}','${esc(item.name || '')}')">Bu kişiyi seç</div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function runSearch(){
+  const q = (document.getElementById('search-q').value || '').trim();
+  const state = document.getElementById('search-state');
+  if(q.length < 2){
+    state.textContent = 'En az 2 karakter girin';
+    renderSummary({});
+    renderResults([]);
+    renderMap('');
+    return;
+  }
+  state.textContent = 'Eşleşmeler taranıyor…';
+  try{
+    const data = await fetch(API + '/api/family/match?q=' + encodeURIComponent(q)).then(r=>r.json());
+    renderSummary(data.summary || {});
+    renderResults(Array.isArray(data.matches) ? data.matches : []);
+    renderMap(q);
+    state.textContent = `${(data.matches || []).length} aday değerlendirildi`;
+  }catch(err){
+    renderSummary({});
+    renderResults([]);
+    renderMap('');
+    state.textContent = 'Arama şu anda yapılamıyor';
+  }
+}
+
+async function sendMessage(){
+  const payload = {
+    contact_name: (document.getElementById('contact-name').value || '').trim(),
+    contact_phone: (document.getElementById('contact-phone').value || '').trim(),
+    person_query: (document.getElementById('contact-person').value || '').trim(),
+    person_id: selectedPersonId,
+    message: (document.getElementById('contact-msg').value || '').trim()
+  };
+  const status = document.getElementById('form-status');
+  if(!payload.message){
+    status.textContent = 'Mesaj boş olamaz';
+    return;
+  }
+  try{
+    const res = await fetch(API + '/api/family/contact', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.detail || 'Mesaj gönderilemedi');
+    document.getElementById('contact-msg').value = '';
+    status.textContent = selectedPersonLabel
+      ? `Mesaj operatör ekibine iletildi · ${selectedPersonLabel}`
+      : 'Mesaj operatör ekibine iletildi';
+  }catch(err){
+    status.textContent = err.message || 'Gönderim hatası';
+  }
+}
+
+document.getElementById('search-q').addEventListener('keydown', e=>{ if(e.key === 'Enter') runSearch(); });
+</script>
+</body>
+</html>
