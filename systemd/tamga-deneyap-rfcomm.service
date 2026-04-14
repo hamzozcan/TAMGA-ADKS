@@ -1,0 +1,14 @@
+[Unit]
+Description=TAMGA Biometric RFCOMM Fallback Binding
+After=bluetooth.target
+Wants=bluetooth.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=-/opt/tamga-adks/.env
+ExecStart=/opt/tamga-adks/donanim/tamga_rfcomm_bind.sh start
+ExecStop=/opt/tamga-adks/donanim/tamga_rfcomm_bind.sh stop
+
+[Install]
+WantedBy=multi-user.target

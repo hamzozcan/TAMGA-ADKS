@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TAMGA GPS Ekrani</title>
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root{
+      --bg:#040b13;
+      --panel:#081420;
+      --panel-soft:rgba(10,24,38,.84);
+      --line:#14314a;
+      --text:#eef6ff;
+      --muted:#89a8c4;
+      --accent:#3cc3ff;
+      --ok:#39d98a;
+    }
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;
+      width:100%;
+      height:100%;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(33,119,177,.26), transparent 34%),
+        linear-gradient(180deg, #07111b 0%, #040b13 58%, #03070c 100%);
+      color:var(--text);
+      font-family:"Segoe UI", Arial, sans-serif;
+    }
+    body{
+      display:flex;
+      justify-content:center;
+      align-items:stretch;
+    }
+    #app{
+      width:100%;
+      height:100%;
+      display:grid;
+      grid-template-rows:42px 1fr;
+      padding:8px;
+      gap:8px;
+    }
+    #marquee-shell{
+      overflow:hidden;
+      border:1px solid rgba(60,195,255,.22);
+      border-radius:999px;
+      background:linear-gradient(90deg, rgba(12,27,42,.94), rgba(8,20,32,.88));
+      box-shadow:0 10px 28px rgba(0,0,0,.28);
+      position:relative;
+    }
+    #marquee-track{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      white-space:nowrap;
+      animation:slide 18s linear infinite;
+      font-size:16px;
+      font-weight:900;
+      letter-spacing:1.4px;
+      color:var(--accent);
+      text-transform:uppercase;
+      text-shadow:0 0 16px rgba(60,195,255,.24);
+    }
+    #marquee-track span{
+      padding-right:64px;
+    }
+    #map-shell{
+      min-height:0;
+      position:relative;
+    }
+    #map-frame{
+      width:100%;
+      height:100%;
+      border-radius:22px;
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(8,20,32,.98), rgba(5,14,22,.98));
+      box-shadow:0 24px 50px rgba(0,0,0,.34);
+      overflow:hidden;
+      position:relative;
+    }
+    #map{
+      position:absolute;
+      inset:0;
+    }
+    #search-bar{
+      position:absolute;
+      top:12px;
+      left:12px;
+      right:12px;
+      z-index:1001;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 76px;
+      gap:8px;
+      align-items:center;
+    }
+    #search-input,
+    #search-btn{
+      min-height:42px;
+      border:none;
+      border-radius:14px;
+      outline:none;
+      font-size:14px;
+      font-weight:800;
+    }
+    #search-input{
+      padding:0 14px;
+      color:var(--text);
+      background:rgba(6,15,24,.92);
+      border:1px solid rgba(60,195,255,.18);
+      box-shadow:0 10px 24px rgba(0,0,0,.2);
+    }
+    #search-input::placeholder{
+      color:#88a3bc;
+      font-weight:700;
+    }
+    #search-btn{
+      color:#fff;
+      cursor:pointer;
+      background:linear-gradient(135deg,#1799df,#0a76c4);
+      box-shadow:0 10px 24px rgba(10,118,196,.26);
+    }
+    #status-pill,
+    #coord-pill{
+      position:absolute;
+      left:12px;
+      right:12px;
+      z-index:1000;
+      background:var(--panel-soft);
+      border:1px solid rgba(60,195,255,.18);
+      backdrop-filter:blur(8px);
+      border-radius:16px;
+      box-shadow:0 10px 24px rgba(0,0,0,.22);
+    }
+    #status-pill{
+      top:64px;
+      padding:10px 12px;
+      text-align:center;
+      font-size:15px;
+      font-weight:800;
+      color:var(--ok);
+    }
+    #coord-pill{
+      bottom:12px;
+      padding:10px 12px;
+      display:grid;
+      gap:4px;
+      text-align:center;
+    }
+    #coord-main{
+      font-size:17px;
+      font-weight:900;
+      letter-spacing:.6px;
+      color:var(--text);
+    }
+    #coord-sub{
+      font-size:12px;
+      color:var(--muted);
+      letter-spacing:1.1px;
+    }
+    .leaflet-control-zoom{
+      margin-right:10px !important;
+      margin-top:124px !important;
+      border:none !important;
+      box-shadow:0 10px 24px rgba(0,0,0,.22) !important;
+    }
+    .leaflet-control-zoom a{
+      background:#0b1725 !important;
+      color:var(--text) !important;
+      border:none !important;
+      width:40px !important;
+      height:40px !important;
+      line-height:40px !important;
+      font-size:22px !important;
+    }
+    .leaflet-popup-content-wrapper,
+    .leaflet-popup-tip{
+      background:#08131f;
+      color:var(--text);
+    }
+    @keyframes slide{
+      0%{transform:translateX(0)}
+      100%{transform:translateX(-50%)}
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="marquee-shell">
+      <div id="marquee-track">
+        <span>TAMGA-ACIL DURUM KIMLIKLENDIRME SISTEMI</span>
+        <span>TAMGA-ACIL DURUM KIMLIKLENDIRME SISTEMI</span>
+        <span>TAMGA-ACIL DURUM KIMLIKLENDIRME SISTEMI</span>
+        <span>TAMGA-ACIL DURUM KIMLIKLENDIRME SISTEMI</span>
+      </div>
+    </div>
+    <div id="map-shell">
+      <div id="map-frame">
+        <div id="search-bar">
+          <input id="search-input" placeholder="Adres veya sehir ara" onkeydown="if(event.key==='Enter') searchLoc()">
+          <button id="search-btn" onclick="searchLoc()">ARA</button>
+        </div>
+        <div id="status-pill">GPS BEKLENIYOR</div>
+        <div id="map"></div>
+        <div id="coord-pill">
+          <div id="coord-main">39.90000, 32.80000</div>
+          <div id="coord-sub">CANLI GPS HARITASI</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const API = '';
+    const WS = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws';
+    let ws = null;
+    let map = null;
+    let baseLayer = null;
+    let locMarker = null;
+    let recordLayer = null;
+
+    function buildGpsIcon(color) {
+      return L.divIcon({
+        className: '',
+        html: `<div style="width:22px;height:22px;border-radius:50%;background:${color};border:3px solid rgba(255,255,255,.92);box-shadow:0 0 24px ${color}aa"></div>`,
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
+      });
+    }
+
+    function initMap() {
+      map = L.map('map', {
+        attributionControl: false,
+        zoomControl: true,
+        zoomSnap: 0.5
+      }).setView([39.9, 32.8], 12);
+
+      const errTile = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+      baseLayer = L.tileLayer(API + '/satellite/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        errorTileUrl: errTile
+      }).addTo(map);
+
+      recordLayer = L.layerGroup().addTo(map);
+    }
+
+    function setGpsStatus(text, tone) {
+      const el = document.getElementById('status-pill');
+      if (!el) return;
+      el.textContent = text;
+      el.style.color = tone || 'var(--ok)';
+    }
+
+    function setCoordText(lat, lon) {
+      const main = document.getElementById('coord-main');
+      if (main) main.textContent = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    }
+
+    function showGps(lat, lon, fly = true) {
+      if (!map) return;
+      setCoordText(lat, lon);
+      setGpsStatus('GPS SABITLENDI', 'var(--ok)');
+
+      if (locMarker) locMarker.remove();
+      locMarker = L.marker([lat, lon], { icon: buildGpsIcon('#3cc3ff') })
+        .bindPopup(`<b>Canli Konum</b><br>${lat.toFixed(5)}, ${lon.toFixed(5)}`)
+        .addTo(map);
+
+      if (fly) {
+        map.flyTo([lat, lon], 14, { animate: true, duration: 1.6 });
+      } else {
+        map.setView([lat, lon], Math.max(map.getZoom(), 14), { animate: false });
+      }
+    }
+
+    async function refreshGps() {
+      try {
+        const d = await fetch(API + '/api/gps').then(r => r.json());
+        if (typeof d.lat === 'number' && typeof d.lon === 'number') {
+          showGps(d.lat, d.lon, true);
+        } else {
+          setGpsStatus('GPS SINYALI YOK', '#f59e0b');
+        }
+      } catch (e) {
+        setGpsStatus('GPS BAGLANTISI YOK', '#ef4444');
+      }
+    }
+
+    async function searchLoc() {
+      const input = document.getElementById('search-input');
+      const q = (input?.value || '').trim();
+      if (!q) return;
+      try {
+        const d = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`, {
+          headers: { 'Accept-Language': 'tr' }
+        }).then(r => r.json());
+        if (Array.isArray(d) && d.length) {
+          showGps(+d[0].lat, +d[0].lon, true);
+          setGpsStatus('ARAMA SONUCU GOSTERILIYOR', '#f8d66d');
+        }
+      } catch (e) {
+        setGpsStatus('ARAMA BASARISIZ', '#ef4444');
+      }
+    }
+
+    async function loadRecordMarkers() {
+      if (!map || !recordLayer) return;
+      recordLayer.clearLayers();
+      const recs = await fetch(API + '/api/records').then(r => r.json()).catch(() => []);
+      const colors = {
+        KIRMIZI: '#ef4444',
+        SARI: '#fbbf24',
+        'YEŞİL': '#22c55e',
+        SIYAH: '#94a3b8',
+        'SİYAH': '#94a3b8'
+      };
+
+      recs.forEach(rec => {
+        const gps = rec['GPS'] || '';
+        if (!gps.includes(',')) return;
+        const [lat, lon] = gps.split(',').map(Number);
+        if (Number.isNaN(lat) || Number.isNaN(lon)) return;
+
+        const triage = String(rec['TRİYAJ'] || '');
+        let color = '#38bdf8';
+        for (const [key, value] of Object.entries(colors)) {
+          if (triage.includes(key)) color = value;
+        }
+
+        L.circleMarker([lat, lon], {
+          radius: 6,
+          weight: 2,
+          color: '#ffffff',
+          fillColor: color,
+          fillOpacity: 0.92
+        }).bindPopup(
+          `<b>${rec['AD SOYAD'] || 'Kayit'}</b><br>${triage || 'BILINMIYOR'}`
+        ).addTo(recordLayer);
+      });
+    }
+
+    function connectWs() {
+      ws = new WebSocket(WS);
+      ws.onmessage = e => {
+        const payload = JSON.parse(e.data);
+        const type = payload.type;
+        const data = payload.data || {};
+
+        if ((type === 'gps_update' || type === 'hw_status') &&
+            typeof data.lat === 'number' &&
+            typeof data.lon === 'number') {
+          showGps(data.lat, data.lon, false);
+        }
+
+        if (type === 'record_added' || type === 'record_updated' || type === 'record_deleted') {
+          loadRecordMarkers();
+        }
+      };
+      ws.onclose = () => setTimeout(connectWs, 3000);
+    }
+
+    window.addEventListener('load', () => {
+      initMap();
+      refreshGps();
+      loadRecordMarkers();
+      connectWs();
+      setInterval(refreshGps, 12000);
+      setInterval(loadRecordMarkers, 18000);
+    });
+  </script>
+</body>
+</html>

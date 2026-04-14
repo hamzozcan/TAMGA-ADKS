@@ -1,0 +1,37 @@
+[Unit]
+Description=TAMGA-ADKS Backend v2.0
+Documentation=https://github.com/tamga-adks
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=tamga
+Group=tamga
+WorkingDirectory=/opt/tamga-adks
+ExecStart=/opt/tamga-adks/venv/bin/python tamga_launcher.py --headless --port 8000
+Restart=always
+RestartSec=5s
+
+# Donanım erişimi için grup izinleri (RPi)
+SupplementaryGroups=gpio spi i2c dialout
+
+# Ortam değişkenleri
+EnvironmentFile=-/opt/tamga-adks/.env
+
+# Dosya limitleri
+LimitNOFILE=65536
+
+# Güvenlik
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+# Log
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tamga-adks
+
+[Install]
+WantedBy=multi-user.target
